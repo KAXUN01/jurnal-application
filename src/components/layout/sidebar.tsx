@@ -8,6 +8,7 @@ import {
     CheckSquare,
     BookOpen,
     TrendingUp,
+    Newspaper,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -33,6 +34,11 @@ const navItems = [
         label: "Trades",
         href: "/trades",
         icon: TrendingUp,
+    },
+    {
+        label: "News",
+        href: "/news",
+        icon: Newspaper,
     },
 ];
 
