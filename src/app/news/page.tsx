@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,148 +14,28 @@ import {
     ArrowRight,
     Calendar,
     Radio,
+    Loader2,
+    RefreshCw,
+    WifiOff,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface NewsEvent {
-    id: string;
-    time: string;
-    currency: string;
     event: string;
+    currency: string;
     impact: "High" | "Medium" | "Low";
+    date: string;      // raw UTC datetime string from API, e.g. "2026-02-23 08:30:00"
+    localTime: string;  // converted to local HH:mm
+    localDate: string;  // converted to local YYYY-MM-DD
     actual: string;
     forecast: string;
     previous: string;
-    date: string;
+    country: string;
 }
-
-// ─── Sample News Data ───────────────────────────────────────────────
-const sampleNews: NewsEvent[] = [
-    {
-        id: "1", date: "2026-02-23", time: "08:30",
-        currency: "USD", event: "Non-Farm Payrolls",
-        impact: "High", actual: "275K", forecast: "250K", previous: "229K",
-    },
-    {
-        id: "2", date: "2026-02-23", time: "08:30",
-        currency: "USD", event: "Unemployment Rate",
-        impact: "High", actual: "3.7%", forecast: "3.8%", previous: "3.7%",
-    },
-    {
-        id: "3", date: "2026-02-23", time: "10:00",
-        currency: "USD", event: "ISM Manufacturing PMI",
-        impact: "High", actual: "49.1", forecast: "47.5", previous: "47.4",
-    },
-    {
-        id: "4", date: "2026-02-23", time: "13:00",
-        currency: "GBP", event: "BOE Interest Rate Decision",
-        impact: "High", actual: "5.25%", forecast: "5.25%", previous: "5.25%",
-    },
-    {
-        id: "5", date: "2026-02-23", time: "07:00",
-        currency: "EUR", event: "ECB Monetary Policy Statement",
-        impact: "High", actual: "—", forecast: "—", previous: "—",
-    },
-    {
-        id: "6", date: "2026-02-23", time: "08:15",
-        currency: "EUR", event: "French Flash Manufacturing PMI",
-        impact: "Medium", actual: "42.5", forecast: "43.1", previous: "42.8",
-    },
-    {
-        id: "7", date: "2026-02-23", time: "09:30",
-        currency: "GBP", event: "Flash Manufacturing PMI",
-        impact: "Medium", actual: "47.3", forecast: "46.5", previous: "46.2",
-    },
-    {
-        id: "8", date: "2026-02-24", time: "00:30",
-        currency: "JPY", event: "BOJ Monetary Policy Meeting Minutes",
-        impact: "Medium", actual: "—", forecast: "—", previous: "—",
-    },
-    {
-        id: "9", date: "2026-02-24", time: "08:30",
-        currency: "CAD", event: "Core Retail Sales m/m",
-        impact: "High", actual: "0.6%", forecast: "0.4%", previous: "-0.3%",
-    },
-    {
-        id: "10", date: "2026-02-24", time: "08:30",
-        currency: "CAD", event: "Retail Sales m/m",
-        impact: "Medium", actual: "0.9%", forecast: "0.8%", previous: "-0.2%",
-    },
-    {
-        id: "11", date: "2026-02-24", time: "05:00",
-        currency: "EUR", event: "German Ifo Business Climate",
-        impact: "High", actual: "86.0", forecast: "85.5", previous: "85.2",
-    },
-    {
-        id: "12", date: "2026-02-24", time: "10:00",
-        currency: "USD", event: "CB Consumer Confidence",
-        impact: "High", actual: "110.7", forecast: "114.0", previous: "114.8",
-    },
-    {
-        id: "13", date: "2026-02-24", time: "15:00",
-        currency: "USD", event: "FOMC Meeting Minutes",
-        impact: "High", actual: "—", forecast: "—", previous: "—",
-    },
-    {
-        id: "14", date: "2026-02-25", time: "04:00",
-        currency: "GBP", event: "CPI y/y",
-        impact: "High", actual: "4.0%", forecast: "4.1%", previous: "4.0%",
-    },
-    {
-        id: "15", date: "2026-02-25", time: "08:30",
-        currency: "USD", event: "Core Durable Goods Orders m/m",
-        impact: "Medium", actual: "0.1%", forecast: "0.2%", previous: "-0.3%",
-    },
-    {
-        id: "16", date: "2026-02-25", time: "08:30",
-        currency: "USD", event: "Advance GDP q/q",
-        impact: "High", actual: "3.3%", forecast: "2.0%", previous: "4.9%",
-    },
-    {
-        id: "17", date: "2026-02-25", time: "05:00",
-        currency: "JPY", event: "Core CPI y/y",
-        impact: "High", actual: "2.3%", forecast: "2.3%", previous: "2.5%",
-    },
-    {
-        id: "18", date: "2026-02-25", time: "09:45",
-        currency: "EUR", event: "ECB Press Conference",
-        impact: "High", actual: "—", forecast: "—", previous: "—",
-    },
-    {
-        id: "19", date: "2026-02-26", time: "08:30",
-        currency: "USD", event: "Core PCE Price Index m/m",
-        impact: "High", actual: "0.2%", forecast: "0.2%", previous: "0.1%",
-    },
-    {
-        id: "20", date: "2026-02-26", time: "07:00",
-        currency: "GBP", event: "Revised GDP q/q",
-        impact: "Medium", actual: "-0.3%", forecast: "-0.1%", previous: "-0.1%",
-    },
-    {
-        id: "21", date: "2026-02-26", time: "13:30",
-        currency: "CAD", event: "GDP m/m",
-        impact: "High", actual: "0.2%", forecast: "0.1%", previous: "-0.1%",
-    },
-    {
-        id: "22", date: "2026-02-23", time: "06:00",
-        currency: "EUR", event: "German CPI m/m",
-        impact: "Low", actual: "0.2%", forecast: "0.3%", previous: "0.1%",
-    },
-    {
-        id: "23", date: "2026-02-24", time: "11:00",
-        currency: "USD", event: "Richmond Manufacturing Index",
-        impact: "Low", actual: "-15", forecast: "-10", previous: "-11",
-    },
-    {
-        id: "24", date: "2026-02-25", time: "10:00",
-        currency: "USD", event: "Pending Home Sales m/m",
-        impact: "Low", actual: "8.3%", forecast: "1.5%", previous: "-0.3%",
-    },
-];
 
 const CURRENCIES = ["EUR", "GBP", "USD", "JPY", "CAD"];
 
-// ─── Currency flag map ─────────────────────────────────────────────
+// ─── Currency color map ────────────────────────────────────────────
 const currencyColor: Record<string, { text: string; bg: string; border: string }> = {
     USD: { text: "text-neon-green", bg: "bg-neon-green/10", border: "border-neon-green/20" },
     EUR: { text: "text-neon-blue", bg: "bg-neon-blue/10", border: "border-neon-blue/20" },
@@ -225,34 +105,123 @@ function DataCell({
     );
 }
 
+// ─── Format value ────────────────────────────────────────────────────
+function fmtValue(v: number | string | null | undefined): string {
+    if (v === null || v === undefined || v === "") return "—";
+    return String(v);
+}
+
+// ─── Convert UTC datetime to local ──────────────────────────────────
+function toLocal(utcDateStr: string): { localTime: string; localDate: string } {
+    try {
+        // API returns "2026-02-23 08:30:00" in UTC
+        const d = new Date(utcDateStr.replace(" ", "T") + "Z");
+        if (isNaN(d.getTime())) return { localTime: "—", localDate: "—" };
+        const localTime = d.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+        });
+        const localDate = d.toLocaleDateString("en-CA"); // YYYY-MM-DD
+        return { localTime, localDate };
+    } catch {
+        return { localTime: "—", localDate: "—" };
+    }
+}
+
 // ─── Main Page ───────────────────────────────────────────────────────
 export default function NewsPage() {
+    const [events, setEvents] = useState<NewsEvent[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [filterCurrency, setFilterCurrency] = useState<string>("");
     const [highImpactOnly, setHighImpactOnly] = useState(false);
+    const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
+    const [dataSource, setDataSource] = useState<"live" | "sample" | null>(null);
 
-    // Filter & group
+    // ─── Fetch data ─────────────────────────────────────────────────
+    const fetchEvents = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const res = await fetch("/api/economic-calendar");
+            if (!res.ok) {
+                throw new Error(`Server returned ${res.status}`);
+            }
+            const data = await res.json();
+            if (data.error) {
+                throw new Error(data.error);
+            }
+
+            // Map API response → NewsEvent with local times
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const mapped: NewsEvent[] = (data.events || []).map((e: any) => {
+                const { localTime, localDate } = toLocal(e.date);
+                return {
+                    event: e.event,
+                    currency: e.currency,
+                    impact: e.impact === "High" ? "High" : e.impact === "Medium" ? "Medium" : "Low",
+                    date: e.date,
+                    localTime,
+                    localDate,
+                    actual: fmtValue(e.actual),
+                    forecast: fmtValue(e.forecast),
+                    previous: fmtValue(e.previous),
+                    country: e.country,
+                };
+            });
+
+            // Sort by date/time — nearest upcoming first
+            const now = new Date();
+            mapped.sort((a, b) => {
+                const da = new Date(a.date.replace(" ", "T") + "Z");
+                const db = new Date(b.date.replace(" ", "T") + "Z");
+                // Future events first, then past events
+                const aFuture = da >= now;
+                const bFuture = db >= now;
+                if (aFuture && !bFuture) return -1;
+                if (!aFuture && bFuture) return 1;
+                // Both future: nearest first; both past: most recent first
+                return aFuture
+                    ? da.getTime() - db.getTime()
+                    : db.getTime() - da.getTime();
+            });
+
+            setEvents(mapped);
+            setDataSource(data.source || "sample");
+            setLastRefresh(new Date());
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "Failed to fetch data");
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    // Fetch on mount
+    useEffect(() => {
+        fetchEvents();
+    }, [fetchEvents]);
+
+    // ─── Filtered events ────────────────────────────────────────────
     const filtered = useMemo(() => {
-        let events = sampleNews;
+        let list = events;
         if (filterCurrency) {
-            events = events.filter((e) => e.currency === filterCurrency);
+            list = list.filter((e) => e.currency === filterCurrency);
         }
         if (highImpactOnly) {
-            events = events.filter((e) => e.impact === "High");
+            list = list.filter((e) => e.impact === "High");
         }
-        return events;
-    }, [filterCurrency, highImpactOnly]);
+        return list;
+    }, [events, filterCurrency, highImpactOnly]);
 
-    // Group by date
+    // Group by local date
     const grouped = useMemo(() => {
         const groups: Record<string, NewsEvent[]> = {};
         filtered.forEach((e) => {
-            if (!groups[e.date]) groups[e.date] = [];
-            groups[e.date].push(e);
+            const key = e.localDate || "Unknown";
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(e);
         });
-        // Sort events within each group by time
-        Object.values(groups).forEach((g) =>
-            g.sort((a, b) => a.time.localeCompare(b.time))
-        );
         return groups;
     }, [filtered]);
 
@@ -265,29 +234,25 @@ export default function NewsPage() {
 
     // Format date header
     const formatDateHeader = (dateStr: string) => {
+        if (dateStr === "Unknown" || dateStr === "—") return "Unknown Date";
         const d = new Date(dateStr + "T00:00:00");
         const today = new Date();
         const isToday = d.toDateString() === today.toDateString();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
         const isTomorrow = d.toDateString() === tomorrow.toDateString();
-
         const formatted = d.toLocaleDateString("en-US", {
             weekday: "long",
             month: "short",
             day: "numeric",
         });
-
         if (isToday) return `Today — ${formatted}`;
         if (isTomorrow) return `Tomorrow — ${formatted}`;
         return formatted;
     };
 
-    // Determine if actual beat or missed forecast
-    const getActualHighlight = (
-        actual: string,
-        forecast: string
-    ): "green" | "red" | null => {
+    // Determine actual beat or miss
+    const getActualHighlight = (actual: string, forecast: string): "green" | "red" | null => {
         if (actual === "—" || forecast === "—") return null;
         const a = parseFloat(actual.replace(/[%K]/g, ""));
         const f = parseFloat(forecast.replace(/[%K]/g, ""));
@@ -313,219 +278,310 @@ export default function NewsPage() {
                     </p>
                 </div>
 
-                {/* Live indicator */}
-                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-neon-red/5 border border-neon-red/15">
-                    <Radio className="h-3.5 w-3.5 text-neon-red animate-pulse" />
-                    <span className="text-xs font-semibold text-neon-red uppercase tracking-wider">
-                        Economic Calendar
-                    </span>
+                <div className="flex items-center gap-3">
+                    {/* Last refresh */}
+                    {lastRefresh && (
+                        <span className="text-[10px] text-gray-600 font-mono">
+                            Updated {lastRefresh.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                        </span>
+                    )}
+                    {/* Refresh button */}
+                    <button
+                        onClick={fetchEvents}
+                        disabled={loading}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-500/30 text-gray-500 transition-all hover:text-white hover:border-surface-500/60 hover:bg-surface-700/30 disabled:opacity-40"
+                        title="Refresh"
+                    >
+                        <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+                    </button>
+                    {/* Source indicator */}
+                    <div className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border ${dataSource === "live"
+                            ? "bg-neon-green/5 border-neon-green/15"
+                            : "bg-neon-red/5 border-neon-red/15"
+                        }`}>
+                        <Radio className={`h-3.5 w-3.5 animate-pulse ${dataSource === "live" ? "text-neon-green" : "text-neon-red"
+                            }`} />
+                        <span className={`text-xs font-semibold uppercase tracking-wider ${dataSource === "live" ? "text-neon-green" : "text-neon-red"
+                            }`}>
+                            {dataSource === "live" ? "Live Feed" : "Economic Calendar"}
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            {/* ─── Impact Summary Bar ──────────────────────────────────── */}
-            <Card className="border-surface-500/20">
-                <CardContent className="p-4">
-                    <div className="flex items-center justify-between flex-wrap gap-4">
-                        <div className="flex items-center gap-5">
-                            <div className="flex items-center gap-2">
-                                <div className="h-2.5 w-2.5 rounded-full bg-neon-red animate-pulse" />
-                                <span className="text-xs font-mono text-gray-400">
-                                    HIGH <span className="text-white font-bold">{highCount}</span>
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="h-2.5 w-2.5 rounded-full bg-neon-yellow" />
-                                <span className="text-xs font-mono text-gray-400">
-                                    MEDIUM <span className="text-white font-bold">{mediumCount}</span>
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="h-2.5 w-2.5 rounded-full bg-gray-600" />
-                                <span className="text-xs font-mono text-gray-400">
-                                    LOW <span className="text-white font-bold">{lowCount}</span>
-                                </span>
-                            </div>
+            {/* ─── Loading State ───────────────────────────────────────── */}
+            {loading && (
+                <Card className="border-surface-500/20">
+                    <CardContent className="p-16 flex flex-col items-center justify-center gap-4">
+                        <div className="relative">
+                            <div className="h-12 w-12 rounded-full border-2 border-surface-600/50" />
+                            <Loader2 className="h-12 w-12 text-neon-green animate-spin absolute inset-0" style={{ clipPath: "inset(0 50% 50% 0)" }} />
                         </div>
-                        <span className="text-xs text-gray-600 font-mono">
-                            {filtered.length} events total
-                        </span>
-                    </div>
-                </CardContent>
-            </Card>
-
-            {/* ─── Filters ────────────────────────────────────────────── */}
-            <Card className="border-surface-500/20">
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-4 flex-wrap">
-                        <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Filter className="h-3.5 w-3.5" />
-                            <span className="uppercase tracking-wider font-mono">Filters</span>
+                        <div className="text-center">
+                            <p className="text-sm font-medium text-gray-400">
+                                Fetching economic calendar…
+                            </p>
+                            <p className="text-[10px] text-gray-600 font-mono mt-1">
+                                Loading today&apos;s market events
+                            </p>
                         </div>
+                    </CardContent>
+                </Card>
+            )}
 
-                        {/* Currency filter */}
-                        <div className="flex items-center gap-1.5">
-                            <button
-                                onClick={() => setFilterCurrency("")}
-                                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${filterCurrency === ""
-                                    ? "bg-surface-600/50 text-white border-surface-500/50"
-                                    : "text-gray-500 border-transparent hover:text-gray-300"
-                                    }`}
-                            >
-                                All
-                            </button>
-                            {CURRENCIES.map((c) => {
-                                const colors = currencyColor[c] || currencyColor.USD;
-                                return (
+            {/* ─── Error State ─────────────────────────────────────────── */}
+            {!loading && error && (
+                <Card className="border-neon-red/20">
+                    <CardContent className="p-12 flex flex-col items-center justify-center gap-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-neon-red/10 border border-neon-red/20">
+                            <WifiOff className="h-7 w-7 text-neon-red" />
+                        </div>
+                        <div className="text-center">
+                            <p className="text-sm font-semibold text-white">
+                                Unable to Load Events
+                            </p>
+                            <p className="text-xs text-gray-500 mt-1 max-w-xs">
+                                {error}
+                            </p>
+                        </div>
+                        <button
+                            onClick={fetchEvents}
+                            className="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold bg-neon-red/10 text-neon-red border border-neon-red/20 hover:bg-neon-red/20 transition-all"
+                        >
+                            <RefreshCw className="h-3.5 w-3.5" />
+                            Try Again
+                        </button>
+                    </CardContent>
+                </Card>
+            )}
+
+            {/* ─── Content (only when loaded & no error) ──────────────── */}
+            {!loading && !error && (
+                <>
+                    {/* Impact Summary Bar */}
+                    <Card className="border-surface-500/20">
+                        <CardContent className="p-4">
+                            <div className="flex items-center justify-between flex-wrap gap-4">
+                                <div className="flex items-center gap-5">
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2.5 w-2.5 rounded-full bg-neon-red animate-pulse" />
+                                        <span className="text-xs font-mono text-gray-400">
+                                            HIGH <span className="text-white font-bold">{highCount}</span>
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2.5 w-2.5 rounded-full bg-neon-yellow" />
+                                        <span className="text-xs font-mono text-gray-400">
+                                            MEDIUM <span className="text-white font-bold">{mediumCount}</span>
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="h-2.5 w-2.5 rounded-full bg-gray-600" />
+                                        <span className="text-xs font-mono text-gray-400">
+                                            LOW <span className="text-white font-bold">{lowCount}</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <span className="text-xs text-gray-600 font-mono">
+                                    {filtered.length} events today
+                                </span>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Filters */}
+                    <Card className="border-surface-500/20">
+                        <CardContent className="p-4">
+                            <div className="flex items-center gap-4 flex-wrap">
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                    <Filter className="h-3.5 w-3.5" />
+                                    <span className="uppercase tracking-wider font-mono">Filters</span>
+                                </div>
+
+                                {/* Currency filter */}
+                                <div className="flex items-center gap-1.5">
                                     <button
-                                        key={c}
-                                        onClick={() =>
-                                            setFilterCurrency(filterCurrency === c ? "" : c)
-                                        }
-                                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all duration-200 border ${filterCurrency === c
-                                            ? `${colors.bg} ${colors.text} ${colors.border}`
+                                        onClick={() => setFilterCurrency("")}
+                                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${filterCurrency === ""
+                                            ? "bg-surface-600/50 text-white border-surface-500/50"
                                             : "text-gray-500 border-transparent hover:text-gray-300"
                                             }`}
                                     >
-                                        {c}
+                                        All
                                     </button>
-                                );
-                            })}
-                        </div>
+                                    {CURRENCIES.map((c) => {
+                                        const colors = currencyColor[c] || currencyColor.USD;
+                                        return (
+                                            <button
+                                                key={c}
+                                                onClick={() =>
+                                                    setFilterCurrency(filterCurrency === c ? "" : c)
+                                                }
+                                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold font-mono transition-all duration-200 border ${filterCurrency === c
+                                                    ? `${colors.bg} ${colors.text} ${colors.border}`
+                                                    : "text-gray-500 border-transparent hover:text-gray-300"
+                                                    }`}
+                                            >
+                                                {c}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
 
-                        <div className="h-5 w-px bg-surface-600/50" />
+                                <div className="h-5 w-px bg-surface-600/50" />
 
-                        {/* High impact toggle */}
-                        <button
-                            onClick={() => setHighImpactOnly(!highImpactOnly)}
-                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${highImpactOnly
-                                ? "bg-neon-red/10 text-neon-red border-neon-red/20 shadow-[0_0_12px_rgba(255,59,92,0.1)]"
-                                : "text-gray-500 border-surface-500/30 hover:text-gray-300 hover:border-surface-500/60"
-                                }`}
-                        >
-                            <Zap className="h-3 w-3" />
-                            High Impact Only
-                        </button>
-                    </div>
-                </CardContent>
-            </Card>
+                                {/* High impact toggle */}
+                                <button
+                                    onClick={() => setHighImpactOnly(!highImpactOnly)}
+                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${highImpactOnly
+                                        ? "bg-neon-red/10 text-neon-red border-neon-red/20 shadow-[0_0_12px_rgba(255,59,92,0.1)]"
+                                        : "text-gray-500 border-surface-500/30 hover:text-gray-300 hover:border-surface-500/60"
+                                        }`}
+                                >
+                                    <Zap className="h-3 w-3" />
+                                    High Impact Only
+                                </button>
+                            </div>
+                        </CardContent>
+                    </Card>
 
-            {/* ─── News Events ────────────────────────────────────────── */}
-            {sortedDates.length === 0 ? (
-                <Card className="border-surface-500/20">
-                    <CardContent className="p-12 text-center">
-                        <Globe className="h-10 w-10 text-gray-600 mx-auto mb-3" />
-                        <p className="text-sm text-gray-500">
-                            No events match your filters
-                        </p>
-                    </CardContent>
-                </Card>
-            ) : (
-                sortedDates.map((date) => (
-                    <div key={date} className="space-y-3">
-                        {/* Date header */}
-                        <div className="flex items-center gap-3 py-1">
-                            <Calendar className="h-4 w-4 text-gray-500" />
-                            <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-                                {formatDateHeader(date)}
-                            </h2>
-                            <div className="flex-1 h-px bg-surface-600/30" />
-                            <span className="text-[10px] text-gray-600 font-mono">
-                                {grouped[date].length} events
-                            </span>
-                        </div>
+                    {/* ─── Empty State ─────────────────────────────────── */}
+                    {sortedDates.length === 0 && (
+                        <Card className="border-surface-500/20">
+                            <CardContent className="p-12 text-center">
+                                <Globe className="h-10 w-10 text-gray-600 mx-auto mb-3" />
+                                <p className="text-sm font-medium text-gray-400">
+                                    {events.length === 0
+                                        ? "No economic events scheduled for today"
+                                        : "No events match your filters"
+                                    }
+                                </p>
+                                <p className="text-[10px] text-gray-600 mt-1">
+                                    {events.length === 0
+                                        ? "Check back during active trading hours"
+                                        : "Try broadening your filter criteria"
+                                    }
+                                </p>
+                            </CardContent>
+                        </Card>
+                    )}
 
-                        {/* Event cards */}
-                        <div className="space-y-2">
-                            {grouped[date].map((event) => {
-                                const impact = impactConfig[event.impact];
-                                const ImpactIcon = impact.icon;
-                                const ccol =
-                                    currencyColor[event.currency] || currencyColor.USD;
-                                const actualHL = getActualHighlight(
-                                    event.actual,
-                                    event.forecast
-                                );
+                    {/* ─── News Events ────────────────────────────────── */}
+                    {sortedDates.map((date) => (
+                        <div key={date} className="space-y-3">
+                            {/* Date header */}
+                            <div className="flex items-center gap-3 py-1">
+                                <Calendar className="h-4 w-4 text-gray-500" />
+                                <h2 className="text-sm font-bold text-white uppercase tracking-wider">
+                                    {formatDateHeader(date)}
+                                </h2>
+                                <div className="flex-1 h-px bg-surface-600/30" />
+                                <span className="text-[10px] text-gray-600 font-mono">
+                                    {grouped[date].length} events
+                                </span>
+                            </div>
 
-                                return (
-                                    <Card
-                                        key={event.id}
-                                        className={`${impact.cardBorder} ${impact.glow} transition-all duration-300 hover:scale-[1.005]`}
-                                    >
-                                        <CardContent className="p-4">
-                                            <div className="flex items-center justify-between gap-4 flex-wrap">
-                                                {/* Left: time + event info */}
-                                                <div className="flex items-center gap-4 min-w-0 flex-1">
-                                                    {/* Time */}
-                                                    <div className="flex items-center gap-1.5 shrink-0 w-16">
-                                                        <Clock className="h-3 w-3 text-gray-600" />
-                                                        <span className="text-xs font-mono text-gray-400">
-                                                            {event.time}
+                            {/* Event cards */}
+                            <div className="space-y-2">
+                                {grouped[date].map((event, idx) => {
+                                    const impact = impactConfig[event.impact];
+                                    const ImpactIcon = impact.icon;
+                                    const ccol = currencyColor[event.currency] || {
+                                        text: "text-gray-400",
+                                        bg: "bg-surface-700/30",
+                                        border: "border-surface-500/20",
+                                    };
+                                    const actualHL = getActualHighlight(event.actual, event.forecast);
+
+                                    return (
+                                        <Card
+                                            key={`${event.event}-${event.date}-${idx}`}
+                                            className={`${impact.cardBorder} ${impact.glow} transition-all duration-300 hover:scale-[1.005]`}
+                                        >
+                                            <CardContent className="p-4">
+                                                <div className="flex items-center justify-between gap-4 flex-wrap">
+                                                    {/* Left: time + event info */}
+                                                    <div className="flex items-center gap-4 min-w-0 flex-1">
+                                                        {/* Time */}
+                                                        <div className="flex items-center gap-1.5 shrink-0 w-16">
+                                                            <Clock className="h-3 w-3 text-gray-600" />
+                                                            <span className="text-xs font-mono text-gray-400">
+                                                                {event.localTime}
+                                                            </span>
+                                                        </div>
+
+                                                        {/* Impact badge */}
+                                                        <div className="shrink-0">
+                                                            <Badge
+                                                                variant={
+                                                                    event.impact === "High"
+                                                                        ? "danger"
+                                                                        : event.impact === "Medium"
+                                                                            ? "warning"
+                                                                            : "neutral"
+                                                                }
+                                                            >
+                                                                <ImpactIcon className="h-3 w-3 mr-1" />
+                                                                {impact.label}
+                                                            </Badge>
+                                                        </div>
+
+                                                        {/* Currency badge */}
+                                                        <span
+                                                            className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold font-mono border ${ccol.bg} ${ccol.text} ${ccol.border}`}
+                                                        >
+                                                            {event.currency}
+                                                        </span>
+
+                                                        {/* Event name */}
+                                                        <span className="text-sm text-white font-medium truncate">
+                                                            {event.event}
                                                         </span>
                                                     </div>
 
-                                                    {/* Impact badge */}
-                                                    <div className="shrink-0">
-                                                        <Badge
-                                                            variant={
-                                                                event.impact === "High"
-                                                                    ? "danger"
-                                                                    : event.impact === "Medium"
-                                                                        ? "warning"
-                                                                        : "neutral"
-                                                            }
-                                                        >
-                                                            <ImpactIcon className="h-3 w-3 mr-1" />
-                                                            {impact.label}
-                                                        </Badge>
+                                                    {/* Right: data values */}
+                                                    <div className="flex items-center gap-6 shrink-0">
+                                                        <DataCell
+                                                            label="Actual"
+                                                            value={event.actual}
+                                                            highlight={actualHL}
+                                                        />
+                                                        <ArrowRight className="h-3 w-3 text-gray-700" />
+                                                        <DataCell
+                                                            label="Forecast"
+                                                            value={event.forecast}
+                                                        />
+                                                        <div className="h-6 w-px bg-surface-600/30" />
+                                                        <DataCell
+                                                            label="Previous"
+                                                            value={event.previous}
+                                                        />
                                                     </div>
-
-                                                    {/* Currency badge */}
-                                                    <span
-                                                        className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-md text-xs font-bold font-mono border ${ccol.bg} ${ccol.text} ${ccol.border}`}
-                                                    >
-                                                        {event.currency}
-                                                    </span>
-
-                                                    {/* Event name */}
-                                                    <span className="text-sm text-white font-medium truncate">
-                                                        {event.event}
-                                                    </span>
                                                 </div>
-
-                                                {/* Right: data values */}
-                                                <div className="flex items-center gap-6 shrink-0">
-                                                    <DataCell
-                                                        label="Actual"
-                                                        value={event.actual}
-                                                        highlight={actualHL}
-                                                    />
-                                                    <ArrowRight className="h-3 w-3 text-gray-700" />
-                                                    <DataCell
-                                                        label="Forecast"
-                                                        value={event.forecast}
-                                                    />
-                                                    <div className="h-6 w-px bg-surface-600/30" />
-                                                    <DataCell
-                                                        label="Previous"
-                                                        value={event.previous}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </CardContent>
-                                    </Card>
-                                );
-                            })}
+                                            </CardContent>
+                                        </Card>
+                                    );
+                                })}
+                            </div>
                         </div>
-                    </div>
-                ))
-            )}
+                    ))}
 
-            {/* ─── Footer Note ────────────────────────────────────────── */}
-            <div className="text-center pt-4">
-                <p className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">
-                    Data updated for demonstration purposes — Connect a live feed for real-time events
-                </p>
-            </div>
+                    {/* Footer */}
+                    <div className="text-center pt-4 space-y-1">
+                        {dataSource === "sample" && (
+                            <p className="text-[10px] text-neon-yellow font-mono uppercase tracking-widest">
+                                Showing sample data — Upgrade your FMP API plan for live events
+                            </p>
+                        )}
+                        <p className="text-[10px] text-gray-600 font-mono uppercase tracking-widest">
+                            {dataSource === "live"
+                                ? "Live data from Financial Modeling Prep — Times shown in your local timezone"
+                                : "Times shown in your local timezone"
+                            }
+                        </p>
+                    </div>
+                </>
+            )}
         </div>
     );
 }

@@ -9,6 +9,7 @@ import {
     BookOpen,
     TrendingUp,
     Newspaper,
+    Calculator,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -39,6 +40,11 @@ const navItems = [
         label: "News",
         href: "/news",
         icon: Newspaper,
+    },
+    {
+        label: "Calculator",
+        href: "/calculator",
+        icon: Calculator,
     },
 ];
 
