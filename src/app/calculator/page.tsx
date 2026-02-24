@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import {
     Calculator,
     DollarSign,
@@ -13,6 +14,7 @@ import {
     BarChart3,
     AlertTriangle,
     ChevronsUpDown,
+    Shield,
 } from "lucide-react";
 
 // ─── Forex Pair Definitions ─────────────────────────────────────────
@@ -202,6 +204,9 @@ export default function CalculatorPage() {
     const hasInputs = balance || riskPct || entry || stopLoss;
     const isValid = result && !("error" in result) && !("warning" in result);
     const hasError = result && "error" in result;
+    const riskLevel = parseFloat(riskPct);
+    const isHighRisk = !isNaN(riskLevel) && riskLevel > 2;
+    const isSafeRisk = !isNaN(riskLevel) && riskLevel > 0 && riskLevel <= 2;
 
     return (
         <div className="animate-fade-in max-w-2xl mx-auto pb-8 space-y-6">
@@ -243,12 +248,12 @@ export default function CalculatorPage() {
                                     key={p.symbol}
                                     onClick={() => setSelectedPair(p.symbol)}
                                     className={`px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all duration-200 border ${selectedPair === p.symbol
-                                            ? p.isJpy
-                                                ? "bg-neon-red/10 text-neon-red border-neon-red/25 shadow-[0_0_12px_rgba(255,59,92,0.08)]"
-                                                : p.symbol === "XAUUSD"
-                                                    ? "bg-neon-yellow/10 text-neon-yellow border-neon-yellow/25 shadow-[0_0_12px_rgba(251,191,36,0.08)]"
-                                                    : "bg-neon-green/10 text-neon-green border-neon-green/25 shadow-[0_0_12px_rgba(0,255,136,0.08)]"
-                                            : "text-gray-500 border-surface-500/20 hover:text-gray-300 hover:border-surface-500/40"
+                                        ? p.isJpy
+                                            ? "bg-neon-red/10 text-neon-red border-neon-red/25 shadow-[0_0_12px_rgba(255,59,92,0.08)]"
+                                            : p.symbol === "XAUUSD"
+                                                ? "bg-neon-yellow/10 text-neon-yellow border-neon-yellow/25 shadow-[0_0_12px_rgba(251,191,36,0.08)]"
+                                                : "bg-neon-green/10 text-neon-green border-neon-green/25 shadow-[0_0_12px_rgba(0,255,136,0.08)]"
+                                        : "text-gray-500 border-surface-500/20 hover:text-gray-300 hover:border-surface-500/40"
                                         }`}
                                 >
                                     {p.label}
@@ -281,14 +286,45 @@ export default function CalculatorPage() {
                             placeholder="10000"
                             suffix="USD"
                         />
-                        <InputField
-                            label="Risk Percentage"
-                            icon={Percent}
-                            value={riskPct}
-                            onChange={setRiskPct}
-                            placeholder="1.0"
-                            suffix="%"
-                        />
+                        <div className="space-y-2">
+                            <InputField
+                                label="Risk Percentage"
+                                icon={Percent}
+                                value={riskPct}
+                                onChange={setRiskPct}
+                                placeholder="1.0"
+                                suffix="%"
+                            />
+                            {/* Quick risk buttons */}
+                            <div className="flex items-center gap-1.5">
+                                <span className="text-[10px] text-gray-600 font-mono mr-1">Quick:</span>
+                                {[0.5, 1, 2].map((pct) => (
+                                    <button
+                                        key={pct}
+                                        onClick={() => setRiskPct(String(pct))}
+                                        className={`px-2.5 py-1 rounded-md text-[11px] font-bold font-mono transition-all duration-200 border ${riskPct === String(pct)
+                                                ? "bg-neon-green/10 text-neon-green border-neon-green/25"
+                                                : "text-gray-500 border-surface-500/20 hover:text-gray-300 hover:border-surface-500/40 active:scale-95"
+                                            }`}
+                                    >
+                                        {pct}%
+                                    </button>
+                                ))}
+                            </div>
+                            {/* Risk level indicator */}
+                            {isHighRisk && (
+                                <div className="flex items-center gap-1.5 animate-fade-in">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-neon-red animate-pulse" />
+                                    <span className="text-[10px] font-mono text-neon-red font-semibold">High risk — above 2%</span>
+                                </div>
+                            )}
+                            {isSafeRisk && (
+                                <div className="flex items-center gap-1.5 animate-fade-in">
+                                    <div className="h-1.5 w-1.5 rounded-full bg-neon-green" />
+                                    <span className="text-[10px] font-mono text-neon-green font-semibold">Safe risk level</span>
+                                </div>
+                            )}
+                        </div>
                         <InputField
                             label="Entry Price"
                             icon={TrendingUp}
@@ -317,31 +353,70 @@ export default function CalculatorPage() {
                 </div>
             )}
 
-            {/* ─── Results ─────────────────────────────────────────────── */}
             {isValid && (
-                <div className="space-y-4">
-                    {/* Direction badge */}
-                    <div className="flex justify-center">
-                        <span
-                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold font-mono uppercase tracking-wider border ${result.direction === "LONG"
-                                ? "bg-neon-green/10 text-neon-green border-neon-green/20"
-                                : "bg-neon-red/10 text-neon-red border-neon-red/20"
-                                }`}
-                        >
-                            <TrendingUp
-                                className={`h-3 w-3 ${result.direction === "SHORT" ? "rotate-180" : ""
-                                    }`}
-                            />
-                            {result.direction} Position
-                        </span>
-                    </div>
+                <div className="space-y-4 animate-fade-in">
+                    {/* ─── Hero Lot Size + Risk Statement ─────────────── */}
+                    <Card className={`transition-all duration-500 ${isHighRisk
+                            ? "border-neon-red/25 shadow-[0_0_30px_rgba(255,59,92,0.08)]"
+                            : "border-neon-green/25 shadow-[0_0_30px_rgba(0,255,136,0.08)]"
+                        }`}>
+                        <CardContent className="p-6">
+                            <div className="text-center space-y-3">
+                                {/* Direction + pair */}
+                                <div className="flex items-center justify-center gap-2">
+                                    <Badge variant={result.direction === "LONG" ? "success" : "danger"}>
+                                        <TrendingUp
+                                            className={`h-3 w-3 mr-1 ${result.direction === "SHORT" ? "rotate-180" : ""}`}
+                                        />
+                                        {result.direction}
+                                    </Badge>
+                                    <span className="text-xs font-mono text-gray-500">{result.pairLabel}</span>
+                                </div>
+
+                                {/* Hero lot size */}
+                                <div className="transition-all duration-300">
+                                    <p className="text-[10px] uppercase tracking-widest text-gray-500 font-mono mb-1">
+                                        Position Size
+                                    </p>
+                                    <p className={`text-5xl font-black font-mono tracking-tight transition-colors duration-300 ${isHighRisk ? "text-neon-red" : "text-neon-green"
+                                        }`}>
+                                        {result.lotSize.toFixed(2)}
+                                    </p>
+                                    <p className="text-xs text-gray-500 font-mono mt-1">standard lots</p>
+                                </div>
+
+                                {/* Risk statement */}
+                                <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border transition-all duration-300 ${isHighRisk
+                                        ? "bg-neon-red/[0.05] border-neon-red/20"
+                                        : "bg-neon-green/[0.05] border-neon-green/20"
+                                    }`}>
+                                    <Shield className={`h-4 w-4 transition-colors duration-300 ${isHighRisk ? "text-neon-red" : "text-neon-green"
+                                        }`} />
+                                    <p className={`text-sm font-semibold font-mono transition-colors duration-300 ${isHighRisk ? "text-neon-red" : "text-neon-green"
+                                        }`}>
+                                        You are risking <span className="font-black">${result.riskAmount.toFixed(2)}</span> on this trade
+                                    </p>
+                                </div>
+
+                                {/* High risk warning */}
+                                {isHighRisk && (
+                                    <div className="flex items-center justify-center gap-2 animate-fade-in">
+                                        <AlertTriangle className="h-3.5 w-3.5 text-neon-red" />
+                                        <p className="text-[11px] text-neon-red font-medium">
+                                            Risk exceeds 2% — Consider reducing your position
+                                        </p>
+                                    </div>
+                                )}
+                            </div>
+                        </CardContent>
+                    </Card>
 
                     {/* Small pip warning */}
                     {result.smallPipWarning && (
-                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-neon-yellow/[0.05] border border-neon-yellow/20">
+                        <div className="flex items-center gap-3 px-4 py-2.5 rounded-xl bg-neon-yellow/[0.05] border border-neon-yellow/20 animate-fade-in">
                             <AlertTriangle className="h-4 w-4 text-neon-yellow shrink-0" />
                             <p className="text-xs text-neon-yellow font-medium">
-                                Pip distance is extremely small — Lot size may be unrealistically large. Double-check your entry and stop loss.
+                                Pip distance is extremely small — Lot size may be unrealistically large.
                             </p>
                         </div>
                     )}
@@ -374,7 +449,7 @@ export default function CalculatorPage() {
                     {/* Lot breakdown + pip info */}
                     <Card className="border-surface-500/15">
                         <CardContent className="p-4">
-                            <div className="flex items-center justify-around text-center">
+                            <div className="flex items-center justify-around text-center flex-wrap gap-y-3">
                                 <div>
                                     <p className="text-[10px] uppercase tracking-widest text-gray-600 font-mono mb-1">
                                         Mini Lots

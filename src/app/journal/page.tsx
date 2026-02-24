@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PositionCalcModal } from "@/components/calculator-modal";
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +22,8 @@ import {
     ArrowRight,
     Zap,
     Save,
+    Calculator,
+    Shield,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -40,6 +43,7 @@ interface TradeJournalEntry {
     stopLoss: string;
     takeProfit: string;
     rrRatio: number;
+    lotSize: string;
     // Section 4: Execution
     entryType: string;
     poiTapped: boolean | null;
@@ -102,11 +106,27 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 export default function JournalPage() {
     const router = useRouter();
     const [showSuccess, setShowSuccess] = useState(false);
+    const [calcModalOpen, setCalcModalOpen] = useState(false);
     const [checklistViolation, setChecklistViolation] = useState<{
         isRuleBreak: boolean;
         failedItems: string[];
         checklistResult: string;
     } | null>(null);
+
+    // ─── Daily Risk Tracker ──────────────────────────────────────────
+    const [todayTradeCount, setTodayTradeCount] = useState(0);
+    useEffect(() => {
+        try {
+            const entries = JSON.parse(localStorage.getItem("tradeflow-journal-entries") || "[]");
+            const today = new Date().toISOString().split("T")[0];
+            setTodayTradeCount(entries.filter((e: { date: string }) => e.date === today).length);
+        } catch {
+            setTodayTradeCount(0);
+        }
+    }, []);
+
+    const dailyLimitReached = todayTradeCount >= 3;
+    const dailyLimitApproaching = todayTradeCount === 2;
 
     const [form, setForm] = useState({
         pair: "",
@@ -119,6 +139,7 @@ export default function JournalPage() {
         entryPrice: "",
         stopLoss: "",
         takeProfit: "",
+        lotSize: "",
         entryType: "",
         poiTapped: null as boolean | null,
         chochConfirmed: null as boolean | null,
@@ -202,6 +223,7 @@ export default function JournalPage() {
             stopLoss: form.stopLoss,
             takeProfit: form.takeProfit,
             rrRatio: rrRatio ?? 0,
+            lotSize: form.lotSize,
             entryType: form.entryType,
             poiTapped: form.poiTapped,
             chochConfirmed: form.chochConfirmed,
@@ -279,6 +301,51 @@ export default function JournalPage() {
                 <p className="text-sm text-gray-500 mt-2 ml-12">
                     Log your trade with full SOP documentation
                 </p>
+            </div>
+
+            {/* ─── Max Daily Risk Tracker ──────────────────────────────── */}
+            <div className={`flex items-center justify-between px-4 py-3 rounded-xl border transition-all duration-300 ${dailyLimitReached
+                ? "border-neon-red/30 bg-neon-red/5 shadow-[0_0_20px_rgba(255,59,92,0.08)]"
+                : dailyLimitApproaching
+                    ? "border-neon-yellow/30 bg-neon-yellow/5 shadow-[0_0_20px_rgba(251,191,36,0.06)]"
+                    : "border-surface-500/20 bg-surface-800/30"
+                }`}>
+                <div className="flex items-center gap-3">
+                    <Shield className={`h-4 w-4 ${dailyLimitReached ? "text-neon-red" : dailyLimitApproaching ? "text-neon-yellow" : "text-gray-400"
+                        }`} />
+                    <div>
+                        <p className={`text-xs font-semibold ${dailyLimitReached ? "text-neon-red" : dailyLimitApproaching ? "text-neon-yellow" : "text-gray-300"
+                            }`}>
+                            {dailyLimitReached
+                                ? "Daily loss limit reached"
+                                : dailyLimitApproaching
+                                    ? "Daily loss limit approaching"
+                                    : "Daily Risk Tracker"}
+                        </p>
+                        <p className="text-[10px] text-gray-500 font-mono">
+                            Max 3 trades per day
+                        </p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    {[1, 2, 3].map((i) => (
+                        <div
+                            key={i}
+                            className={`h-3 w-3 rounded-full border transition-all duration-300 ${i <= todayTradeCount
+                                ? todayTradeCount >= 3
+                                    ? "bg-neon-red border-neon-red/50"
+                                    : todayTradeCount === 2
+                                        ? "bg-neon-yellow border-neon-yellow/50"
+                                        : "bg-neon-green border-neon-green/50"
+                                : "bg-surface-700 border-surface-500/30"
+                                }`}
+                        />
+                    ))}
+                    <span className={`text-xs font-bold font-mono ml-1 ${dailyLimitReached ? "text-neon-red" : dailyLimitApproaching ? "text-neon-yellow" : "text-gray-400"
+                        }`}>
+                        {todayTradeCount}/3
+                    </span>
+                </div>
             </div>
 
             {/* ─── Rule Break Warning ───────────────────────────────────── */}
@@ -424,7 +491,7 @@ export default function JournalPage() {
                         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-purple/10">
                             <Crosshair className="h-4 w-4 text-neon-purple" />
                         </div>
-                        <div>
+                        <div className="flex-1">
                             <span className="text-xs text-gray-500 uppercase tracking-widest font-mono block mb-0.5">
                                 Section 3
                             </span>
@@ -432,6 +499,15 @@ export default function JournalPage() {
                                 Entry Details
                             </span>
                         </div>
+                        {/* Calculator button */}
+                        <button
+                            type="button"
+                            onClick={() => setCalcModalOpen(true)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold font-mono text-neon-green border border-neon-green/25 bg-neon-green/10 hover:bg-neon-green/20 transition-all duration-200 shadow-[0_0_12px_rgba(0,255,136,0.06)] active:scale-95"
+                        >
+                            <Calculator className="h-3.5 w-3.5" />
+                            Calculate Position Size
+                        </button>
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -466,6 +542,28 @@ export default function JournalPage() {
                                 placeholder="0.00000"
                             />
                         </div>
+                    </div>
+
+                    {/* Lot Size (auto-filled from calculator) */}
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                        <div>
+                            <FieldLabel>Lot Size</FieldLabel>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={form.lotSize}
+                                onChange={(e) => set("lotSize", e.target.value)}
+                                placeholder="0.00"
+                            />
+                        </div>
+                        {form.lotSize && (
+                            <div className="flex items-center gap-2 pb-2 animate-fade-in">
+                                <BarChart3 className="h-4 w-4 text-neon-purple" />
+                                <span className="text-xs font-mono text-gray-400">
+                                    <span className="text-neon-purple font-bold">{form.lotSize}</span> standard lots
+                                </span>
+                            </div>
+                        )}
                     </div>
 
                     {/* RR Display */}
@@ -719,6 +817,18 @@ export default function JournalPage() {
                     {isFormValid && <ArrowRight className="h-4 w-4" />}
                 </button>
             </div>
+
+            {/* ─── Calculator Modal ───────────────────────────────────── */}
+            <PositionCalcModal
+                open={calcModalOpen}
+                onClose={() => setCalcModalOpen(false)}
+                onApply={(lotSize) => set("lotSize", lotSize)}
+                prefill={{
+                    pair: form.pair,
+                    entryPrice: form.entryPrice,
+                    stopLoss: form.stopLoss,
+                }}
+            />
         </div>
     );
 }
