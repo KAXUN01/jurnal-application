@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -422,7 +423,14 @@ export default function TradesPage() {
                         <TrendingUp className="h-10 w-10 text-gray-700 mx-auto mb-3" />
                         <p className="text-sm text-gray-500">No trades found</p>
                         <p className="text-xs text-gray-600 mt-1">
-                            Log trades from the Journal page to see them here
+                            Log trades from the{" "}
+                            <Link
+                                href="/journal"
+                                className="text-neon-green hover:text-neon-green/80 font-semibold transition-colors underline"
+                            >
+                                Journal page
+                            </Link>
+                            {" "}to see them here
                         </p>
                     </CardContent>
                 </Card>

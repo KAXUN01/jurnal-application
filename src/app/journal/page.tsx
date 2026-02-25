@@ -24,6 +24,9 @@ import {
     Save,
     Calculator,
     Shield,
+    Image,
+    Upload,
+    X,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -55,6 +58,8 @@ interface TradeJournalEntry {
     emotion: string;
     followedRules: boolean | null;
     mistakes: string;
+    // Screenshots
+    screenshots: string[];
 }
 
 // ─── Toggle Button Component ────────────────────────────────────────
@@ -107,6 +112,7 @@ export default function JournalPage() {
     const router = useRouter();
     const [showSuccess, setShowSuccess] = useState(false);
     const [calcModalOpen, setCalcModalOpen] = useState(false);
+    const [screenshotUrl, setScreenshotUrl] = useState("");
     const [checklistViolation, setChecklistViolation] = useState<{
         isRuleBreak: boolean;
         failedItems: string[];
@@ -148,6 +154,7 @@ export default function JournalPage() {
         emotion: "",
         followedRules: null as boolean | null,
         mistakes: "",
+        screenshots: [] as string[],
     });
 
     // Read pending checklist state on mount
@@ -799,6 +806,117 @@ export default function JournalPage() {
                             className="min-h-[90px]"
                         />
                     </div>
+                </CardContent>
+            </Card>
+
+            {/* ─── SECTION 7: Trade Screenshots ──────────────────────────── */}
+            <Card className="border-neon-yellow/15 hover:shadow-glow-yellow transition-all duration-300">
+                <CardHeader className="pb-2">
+                    <CardTitle className="flex items-center gap-3 text-sm">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neon-yellow/10">
+                            <Image className="h-4 w-4 text-neon-yellow" />
+                        </div>
+                        <div>
+                            <span className="text-xs text-gray-500 uppercase tracking-widest font-mono block mb-0.5">
+                                Section 7
+                            </span>
+                            <span className="text-white text-sm font-semibold">
+                                Trade Screenshots
+                            </span>
+                        </div>
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <FieldLabel>Screenshot URL (TradingView or Image Link)</FieldLabel>
+                        <div className="flex gap-2">
+                            <Input
+                                type="url"
+                                value={screenshotUrl}
+                                onChange={(e) => setScreenshotUrl(e.target.value)}
+                                placeholder="Paste your screenshot URL here (e.g., https://...)"
+                                className="flex-1"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    if (screenshotUrl.trim()) {
+                                        setForm({
+                                            ...form,
+                                            screenshots: [...form.screenshots, screenshotUrl.trim()],
+                                        });
+                                        setScreenshotUrl("");
+                                    }
+                                }}
+                                disabled={!screenshotUrl.trim()}
+                                className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all duration-200 border flex items-center gap-2 ${screenshotUrl.trim()
+                                    ? "bg-neon-green/10 text-neon-green border-neon-green/30 hover:bg-neon-green/20 cursor-pointer"
+                                    : "bg-surface-800/50 text-gray-600 border-surface-600/30 cursor-not-allowed"
+                                    }`}
+                            >
+                                <Upload className="h-3.5 w-3.5" />
+                                Add
+                            </button>
+                        </div>
+                        <p className="text-[10px] text-gray-600 mt-2">
+                            Copy and paste the image/screenshot URL from TradingView or any image hosting service
+                        </p>
+                    </div>
+
+                    {/* ─── Screenshot Gallery ──────────────────────────────── */}
+                    {form.screenshots.length > 0 && (
+                        <div className="space-y-2">
+                            <p className="text-xs text-gray-500 font-mono uppercase tracking-widest">
+                                Saved Screenshots ({form.screenshots.length})
+                            </p>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                                {form.screenshots.map((screenshot, idx) => (
+                                    <div
+                                        key={idx}
+                                        className="relative group rounded-lg overflow-hidden border border-surface-500/30 hover:border-neon-yellow/30 transition-all"
+                                    >
+                                        <img
+                                            src={screenshot}
+                                            alt={`Screenshot ${idx + 1}`}
+                                            className="w-full h-24 object-cover bg-surface-900"
+                                            onError={() => {
+                                                // Handle broken image links
+                                            }}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const updated = form.screenshots.filter((_, i) => i !== idx);
+                                                setForm({ ...form, screenshots: updated });
+                                            }}
+                                            className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/50 transition-all duration-200 opacity-0 group-hover:opacity-100"
+                                        >
+                                            <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-neon-red/20 border border-neon-red/40 hover:bg-neon-red/30">
+                                                <X className="h-4 w-4 text-neon-red" />
+                                            </div>
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="space-y-2 mt-3">
+                                {form.screenshots.map((url, idx) => (
+                                    <div key={idx} className="flex items-center gap-2 p-2 bg-surface-900/50 rounded-lg border border-surface-500/20">
+                                        <span className="text-[10px] text-gray-600 font-mono flex-1 truncate">
+                                            {idx + 1}. {url}
+                                        </span>
+                                        <a
+                                            href={url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-neon-blue hover:text-neon-blue/80 text-[10px] font-semibold"
+                                        >
+                                            View
+                                        </a>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
