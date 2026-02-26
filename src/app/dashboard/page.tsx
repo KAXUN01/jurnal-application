@@ -149,40 +149,39 @@ export default function DashboardPage() {
     const [trades, setTrades] = useState<TradeEntry[]>([]);
     const [loaded, setLoaded] = useState(false);
 
+    // Load trades from API
     useEffect(() => {
-        // Load from both stores
-        const journalEntries: TradeEntry[] = JSON.parse(
-            localStorage.getItem("tradeflow-journal-entries") || "[]"
-        );
-        const legacyTrades: TradeEntry[] = JSON.parse(
-            localStorage.getItem("tradeflow-trades") || "[]"
-        );
+        async function fetchTrades() {
+            try {
+                const response = await fetch("/api/trades");
+                if (!response.ok) throw new Error("Failed to fetch trades");
+                const journalEntries: TradeEntry[] = await response.json();
 
-        const journalIds = new Set(journalEntries.map((e) => e.id));
-        const combined = [
-            ...journalEntries,
-            ...legacyTrades.filter((t) => !journalIds.has(t.id)),
-        ];
+                // Normalize database entries
+                const normalized = journalEntries.map((t) => ({
+                    ...t,
+                    pair: t.pair || "—",
+                    tradeType: t.tradeType || "—",
+                    outcome: t.outcome || "—",
+                    rrRatio: t.rrRatio || 0,
+                    profitLoss: t.profitLoss || "0",
+                    followedRules: t.followedRules ?? null,
+                    emotion: t.emotion || "—",
+                    mistakes: t.mistakes || "",
+                    poiTapped: t.poiTapped ?? null,
+                    chochConfirmed: t.chochConfirmed ?? null,
+                    date: t.date || "—",
+                }));
 
-        // Normalize
-        const normalized = combined.map((t) => ({
-            ...t,
-            pair: t.pair || t.symbol || "—",
-            tradeType: t.tradeType || "—",
-            outcome: t.outcome || t.status || "—",
-            rrRatio: t.rrRatio || 0,
-            profitLoss: t.profitLoss || (t.pnl !== undefined ? String(t.pnl) : "0"),
-            followedRules: t.followedRules ?? null,
-            emotion: t.emotion || "—",
-            mistakes: t.mistakes || t.notes || "",
-            poiTapped: t.poiTapped ?? null,
-            chochConfirmed: t.chochConfirmed ?? null,
-            date: t.date || "—",
-        }));
-
-        normalized.sort((a, b) => (a.date > b.date ? 1 : -1));
-        setTrades(normalized);
-        setLoaded(true);
+                normalized.sort((a, b) => (a.date > b.date ? 1 : -1));
+                setTrades(normalized);
+                setLoaded(true);
+            } catch (error) {
+                console.error("Fetch error:", error);
+                setLoaded(true);
+            }
+        }
+        fetchTrades();
     }, []);
 
     // ─── Computed Metrics ─────────────────────────────────────────────
@@ -590,10 +589,10 @@ export default function DashboardPage() {
 
                         {/* Insight Message */}
                         <div className={`rounded-xl border p-4 text-center transition-all duration-500 ${metrics.followedWinRate > metrics.brokenWinRate
-                                ? "border-neon-green/20 bg-neon-green/[0.03] shadow-[0_0_25px_rgba(0,255,136,0.05)]"
-                                : metrics.followedWinRate === metrics.brokenWinRate
-                                    ? "border-surface-500/20 bg-surface-800/30"
-                                    : "border-neon-yellow/20 bg-neon-yellow/[0.03]"
+                            ? "border-neon-green/20 bg-neon-green/[0.03] shadow-[0_0_25px_rgba(0,255,136,0.05)]"
+                            : metrics.followedWinRate === metrics.brokenWinRate
+                                ? "border-surface-500/20 bg-surface-800/30"
+                                : "border-neon-yellow/20 bg-neon-yellow/[0.03]"
                             }`}>
                             <p className="text-sm font-medium text-white">
                                 {metrics.followedWinRate > metrics.brokenWinRate ? (

@@ -1,0 +1,27 @@
+-- CreateTable
+CREATE TABLE "Trade" (
+    "id" TEXT NOT NULL PRIMARY KEY,
+    "pair" TEXT NOT NULL,
+    "tradeType" TEXT NOT NULL,
+    "date" TEXT NOT NULL,
+    "time" TEXT NOT NULL,
+    "bias1H" TEXT NOT NULL,
+    "rangeType" TEXT NOT NULL,
+    "poiType" TEXT NOT NULL,
+    "entryPrice" TEXT NOT NULL,
+    "stopLoss" TEXT NOT NULL,
+    "takeProfit" TEXT NOT NULL,
+    "rrRatio" REAL NOT NULL,
+    "lotSize" TEXT NOT NULL,
+    "entryType" TEXT NOT NULL,
+    "poiTapped" BOOLEAN,
+    "chochConfirmed" BOOLEAN,
+    "outcome" TEXT NOT NULL,
+    "profitLoss" TEXT NOT NULL,
+    "emotion" TEXT NOT NULL,
+    "followedRules" BOOLEAN,
+    "mistakes" TEXT NOT NULL,
+    "screenshots" TEXT,
+    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" DATETIME NOT NULL
+);

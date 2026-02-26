@@ -244,49 +244,47 @@ export default function TradesPage() {
     const [filterType, setFilterType] = useState("");
     const [filterResult, setFilterResult] = useState("");
 
-    // Load trades from both stores
+    // Load trades from API
     useEffect(() => {
-        const journalEntries: TradeEntry[] = JSON.parse(
-            localStorage.getItem("tradeflow-journal-entries") || "[]"
-        );
-        const legacyTrades: TradeEntry[] = JSON.parse(
-            localStorage.getItem("tradeflow-trades") || "[]"
-        );
+        async function fetchTrades() {
+            try {
+                const response = await fetch("/api/trades");
+                if (!response.ok) throw new Error("Failed to fetch trades");
+                const journalEntries: TradeEntry[] = await response.json();
 
-        // Merge: journal entries take priority, legacy trades fill gaps
-        const journalIds = new Set(journalEntries.map((e) => e.id));
-        const combined = [
-            ...journalEntries,
-            ...legacyTrades.filter((t) => !journalIds.has(t.id)),
-        ];
+                // Merge: database entries take priority, legacy database records fill gaps
+                const normalized = journalEntries.map((t) => ({
+                    ...t,
+                    pair: t.pair || "—",
+                    tradeType: t.tradeType || "—",
+                    outcome: t.outcome || "—",
+                    rrRatio: t.rrRatio || 0,
+                    profitLoss: t.profitLoss || "0",
+                    followedRules: t.followedRules ?? null,
+                    emotion: t.emotion || "—",
+                    bias1H: t.bias1H || "—",
+                    rangeType: t.rangeType || "—",
+                    poiType: t.poiType || "—",
+                    entryPrice: t.entryPrice || "—",
+                    stopLoss: t.stopLoss || "—",
+                    takeProfit: t.takeProfit || "—",
+                    entryType: t.entryType || "—",
+                    poiTapped: t.poiTapped ?? null,
+                    chochConfirmed: t.chochConfirmed ?? null,
+                    mistakes: t.mistakes || "",
+                    date: t.date || "—",
+                }));
 
-        // Normalize legacy trades
-        const normalized = combined.map((t) => ({
-            ...t,
-            pair: t.pair || t.symbol || "—",
-            tradeType: t.tradeType || "—",
-            outcome: t.outcome || t.status || "—",
-            rrRatio: t.rrRatio || 0,
-            profitLoss: t.profitLoss || (t.pnl !== undefined ? String(t.pnl) : "0"),
-            followedRules: t.followedRules ?? null,
-            emotion: t.emotion || "—",
-            bias1H: t.bias1H || "—",
-            rangeType: t.rangeType || "—",
-            poiType: t.poiType || "—",
-            entryPrice: t.entryPrice || (t.entry !== undefined ? String(t.entry) : "—"),
-            stopLoss: t.stopLoss || "—",
-            takeProfit: t.takeProfit || (t.exit !== undefined ? String(t.exit) : "—"),
-            entryType: t.entryType || "—",
-            poiTapped: t.poiTapped ?? null,
-            chochConfirmed: t.chochConfirmed ?? null,
-            mistakes: t.mistakes || t.notes || "",
-            date: t.date || "—",
-        }));
-
-        // Sort by date desc
-        normalized.sort((a, b) => (b.date > a.date ? 1 : -1));
-        setTrades(normalized);
-        setLoaded(true);
+                // Sort by date desc
+                normalized.sort((a, b) => (b.date > a.date ? 1 : -1));
+                setTrades(normalized);
+                setLoaded(true);
+            } catch (error) {
+                console.error("Fetch error:", error);
+                setLoaded(true);
+            }
+        }
+        fetchTrades();
     }, []);
 
     // ─── Filtered trades ──────────────────────────────────────────────

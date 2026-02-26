@@ -1,0 +1,38 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Trade {
+  id              String   @id @default(cuid())
+  pair            String
+  tradeType       String
+  date            String
+  time            String
+  bias1H          String
+  rangeType       String
+  poiType         String
+  entryPrice      String
+  stopLoss        String
+  takeProfit      String
+  rrRatio         Float
+  lotSize         String
+  entryType       String
+  poiTapped       Boolean?
+  chochConfirmed  Boolean?
+  outcome         String
+  profitLoss      String
+  emotion         String
+  followedRules   Boolean?
+  mistakes        String
+  screenshots     String? // JSON stringified array of strings
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}

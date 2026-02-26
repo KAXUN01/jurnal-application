@@ -29,39 +29,6 @@ import {
     X,
 } from "lucide-react";
 
-// ─── Types ───────────────────────────────────────────────────────────
-interface TradeJournalEntry {
-    id: string;
-    // Section 1: Trade Info
-    pair: string;
-    tradeType: string;
-    date: string;
-    time: string;
-    // Section 2: Market Context
-    bias1H: string;
-    rangeType: string;
-    poiType: string;
-    // Section 3: Entry Details
-    entryPrice: string;
-    stopLoss: string;
-    takeProfit: string;
-    rrRatio: number;
-    lotSize: string;
-    // Section 4: Execution
-    entryType: string;
-    poiTapped: boolean | null;
-    chochConfirmed: boolean | null;
-    // Section 5: Result
-    outcome: string;
-    profitLoss: string;
-    // Section 6: Psychology
-    emotion: string;
-    followedRules: boolean | null;
-    mistakes: string;
-    // Screenshots
-    screenshots: string[];
-}
-
 // ─── Toggle Button Component ────────────────────────────────────────
 function ToggleButton({
     value,
@@ -214,11 +181,10 @@ export default function JournalPage() {
     }, [form]);
 
     // ─── Submit ───────────────────────────────────────────────────────
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!isFormValid) return;
 
-        const entry: TradeJournalEntry = {
-            id: Date.now().toString(),
+        const entry = {
             pair: form.pair,
             tradeType: form.tradeType,
             date: form.date,
@@ -242,37 +208,24 @@ export default function JournalPage() {
             screenshots: form.screenshots,
         };
 
-        // Save to journal entries
-        const existing = JSON.parse(
-            localStorage.getItem("tradeflow-journal-entries") || "[]"
-        );
-        existing.unshift(entry);
-        localStorage.setItem("tradeflow-journal-entries", JSON.stringify(existing));
+        try {
+            const response = await fetch("/api/trades", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(entry),
+            });
 
-        // Also save as a trade to show on dashboard/trades page
-        const pnlValue = parseFloat(form.profitLoss) || 0;
-        const tradeRecord = {
-            id: entry.id,
-            date: form.date,
-            symbol: form.pair,
-            side: form.bias1H === "Bullish" ? "Long" : "Short",
-            entry: parseFloat(form.entryPrice) || 0,
-            exit: parseFloat(form.takeProfit) || 0,
-            pnl: form.outcome === "Loss" ? -Math.abs(pnlValue) : Math.abs(pnlValue),
-            status: form.outcome === "BE" ? "Win" : form.outcome,
-            notes: `${form.tradeType} | ${form.rangeType} | ${form.poiType} | RR: ${rrRatio ?? "N/A"}`,
-        };
-        const trades = JSON.parse(
-            localStorage.getItem("tradeflow-trades") || "[]"
-        );
-        trades.unshift(tradeRecord);
-        localStorage.setItem("tradeflow-trades", JSON.stringify(trades));
+            if (!response.ok) throw new Error("Failed to save trade");
 
-        // Show success
-        setShowSuccess(true);
-        setTimeout(() => {
-            router.push("/trades");
-        }, 2000);
+            // Show success
+            setShowSuccess(true);
+            setTimeout(() => {
+                router.push("/trades");
+            }, 2000);
+        } catch (error) {
+            console.error("Submission error:", error);
+            alert("Failed to save trade to database.");
+        }
     };
 
     // ─── Success Overlay ──────────────────────────────────────────────
@@ -409,6 +362,7 @@ export default function JournalPage() {
                                 <option value="UJ">UJ (USD/JPY)</option>
                                 <option value="UF">UF (USD/CHF)</option>
                                 <option value="UCAD">UCAD (USD/CAD)</option>
+                                <option value="AU">AU (AUD/USD)</option>
                             </Select>
                         </div>
                         <div>
