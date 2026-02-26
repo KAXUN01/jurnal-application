@@ -239,6 +239,7 @@ export default function JournalPage() {
             emotion: form.emotion,
             followedRules: form.followedRules,
             mistakes: form.mistakes,
+            screenshots: form.screenshots,
         };
 
         // Save to journal entries
