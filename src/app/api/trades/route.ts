@@ -52,6 +52,9 @@ export async function POST(request: Request) {
         return NextResponse.json(trade);
     } catch (error) {
         console.error("Failed to create trade:", error);
-        return NextResponse.json({ error: "Failed to create trade" }, { status: 500 });
+        // return the original error message in the response when possible so the
+        // client alert can give more context during development
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }

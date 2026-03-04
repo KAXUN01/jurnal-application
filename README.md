@@ -71,10 +71,18 @@ Copy the example env file and update values:
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` (or leave `DATABASE_URL` empty to use the
+built‑in SQLite fallback for quick local development):
 
 ```env
-DATABASE_URL="postgresql://postgres:password@localhost:5432/jurnal_db?schema=public"
+# for a Postgres / MySQL setup, uncomment and customise the line below
+# DATABASE_URL="postgresql://postgres:password@localhost:5432/jurnal_db?schema=public"
+
+# when the variable is empty the app will automatically use `file:./dev.db`
+# and create the `Trade` table on start, so you can run the project without
+# a database server.
+# DATABASE_URL=""
+
 JWT_SECRET="your-super-secret-jwt-key-change-this-in-production-min-32-chars!!"
 NEXT_PUBLIC_APP_URL="http://localhost:3000"
 ```

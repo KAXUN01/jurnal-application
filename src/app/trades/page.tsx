@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import EditTradeModal from "@/components/edit-trade-modal";
 import {
     BarChart3,
     ChevronDown,
@@ -18,6 +20,8 @@ import {
     XCircle,
     AlertTriangle,
     ListChecks,
+    Edit2,
+    Trash2,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -238,11 +242,67 @@ export default function TradesPage() {
     const [trades, setTrades] = useState<TradeEntry[]>([]);
     const [loaded, setLoaded] = useState(false);
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [editingTrade, setEditingTrade] = useState<TradeEntry | null>(null);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-    // Filters
+    // Filters - Pair, Type, Result
     const [filterPair, setFilterPair] = useState("");
     const [filterType, setFilterType] = useState("");
     const [filterResult, setFilterResult] = useState("");
+
+    // Filters - Date Range
+    const [dateFilterMode, setDateFilterMode] = useState<
+        "all" | "today" | "week" | "month" | "custom"
+    >("all");
+    const [customStartDate, setCustomStartDate] = useState("");
+    const [customEndDate, setCustomEndDate] = useState("");
+
+    // ─── Date filter helper functions ─────────────────────────────────
+    const getDateRangeForMode = (
+        mode: string
+    ): { start: string; end: string } | null => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (mode === "today") {
+            const dateStr = today.toISOString().split("T")[0];
+            return { start: dateStr, end: dateStr };
+        }
+
+        if (mode === "week") {
+            // Get start of current week (Monday)
+            const weekStart = new Date(today);
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+            weekStart.setDate(diff);
+            weekStart.setHours(0, 0, 0, 0);
+
+            // Get end of current week (Sunday)
+            const weekEnd = new Date(weekStart);
+            weekEnd.setDate(weekStart.getDate() + 6);
+
+            return {
+                start: weekStart.toISOString().split("T")[0],
+                end: weekEnd.toISOString().split("T")[0],
+            };
+        }
+
+        if (mode === "month") {
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+
+            return {
+                start: monthStart.toISOString().split("T")[0],
+                end: monthEnd.toISOString().split("T")[0],
+            };
+        }
+
+        if (mode === "custom" && customStartDate && customEndDate) {
+            return { start: customStartDate, end: customEndDate };
+        }
+
+        return null;
+    };
 
     // Load trades from API
     useEffect(() => {
@@ -287,11 +347,77 @@ export default function TradesPage() {
         fetchTrades();
     }, []);
 
+    // ─── Handle edit trade ────────────────────────────────────────────
+    const handleEditTrade = (trade: TradeEntry) => {
+        setEditingTrade(trade);
+        setIsEditModalOpen(true);
+    };
+
+    // ─── Handle save edited trade ─────────────────────────────────────
+    const handleSaveEditedTrade = async (updatedTrade: TradeEntry) => {
+        try {
+            const response = await fetch(`/api/trades/${updatedTrade.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updatedTrade),
+            });
+
+            if (!response.ok) throw new Error("Failed to save trade");
+
+            // Update local state
+            setTrades((prev) =>
+                prev.map((t) => (t.id === updatedTrade.id ? updatedTrade : t))
+            );
+            setIsEditModalOpen(false);
+            setEditingTrade(null);
+        } catch (error) {
+            console.error("Save error:", error);
+            alert("Failed to save changes");
+        }
+    };
+
+    // ─── Handle delete trade ──────────────────────────────────────────
+    const handleDeleteTrade = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this trade?")) return;
+
+        try {
+            const response = await fetch(`/api/trades/${id}`, {
+                method: "DELETE",
+            });
+
+            if (!response.ok) throw new Error("Failed to delete trade");
+
+            // Update local state
+            setTrades((prev) => prev.filter((t) => t.id !== id));
+            setExpandedId(null);
+        } catch (error) {
+            console.error("Delete error:", error);
+            alert("Failed to delete trade");
+        }
+    };
+
     // ─── Filtered trades ──────────────────────────────────────────────
     const filtered = trades.filter((t) => {
+        // Apply pair filter
         if (filterPair && t.pair !== filterPair) return false;
+        
+        // Apply trade type filter
         if (filterType && t.tradeType !== filterType) return false;
+        
+        // Apply outcome filter
         if (filterResult && t.outcome !== filterResult) return false;
+
+        // Apply date range filter
+        if (dateFilterMode !== "all") {
+            const dateRange = getDateRangeForMode(dateFilterMode);
+            if (dateRange && t.date !== "—") {
+                const tradeDate = t.date;
+                if (tradeDate < dateRange.start || tradeDate > dateRange.end) {
+                    return false;
+                }
+            }
+        }
+
         return true;
     });
 
@@ -359,7 +485,7 @@ export default function TradesPage() {
 
             {/* ─── Filters ─────────────────────────────────────────────── */}
             <Card className="border-surface-500/20">
-                <CardContent className="p-4">
+                <CardContent className="p-4 space-y-4">
                     <div className="flex items-center gap-3 flex-wrap">
                         <div className="flex items-center gap-2 text-xs text-gray-500">
                             <Filter className="h-3.5 w-3.5" />
@@ -411,6 +537,66 @@ export default function TradesPage() {
                             {filtered.length} trade{filtered.length !== 1 ? "s" : ""}
                         </span>
                     </div>
+
+                    {/* ─── Date Range Filter ───────────────────────────────── */}
+                    <div className="flex items-center gap-3 flex-wrap pt-2 border-t border-surface-500/10">
+                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="uppercase tracking-widest font-mono">Date</span>
+                        </div>
+                        <Select
+                            value={dateFilterMode}
+                            onChange={(e) =>
+                                setDateFilterMode(
+                                    e.target.value as
+                                        | "all"
+                                        | "today"
+                                        | "week"
+                                        | "month"
+                                        | "custom"
+                                )
+                            }
+                            className="w-36 text-xs"
+                        >
+                            <option value="all">All Time</option>
+                            <option value="today">Today</option>
+                            <option value="week">This Week</option>
+                            <option value="month">This Month</option>
+                            <option value="custom">Custom Range</option>
+                        </Select>
+
+                        {dateFilterMode === "custom" && (
+                            <>
+                                <Input
+                                    type="date"
+                                    value={customStartDate}
+                                    onChange={(e) => setCustomStartDate(e.target.value)}
+                                    className="w-32 text-xs"
+                                    placeholder="Start date"
+                                />
+                                <span className="text-xs text-gray-600">to</span>
+                                <Input
+                                    type="date"
+                                    value={customEndDate}
+                                    onChange={(e) => setCustomEndDate(e.target.value)}
+                                    className="w-32 text-xs"
+                                    placeholder="End date"
+                                />
+                            </>
+                        )}
+
+                        {dateFilterMode !== "all" && (
+                            <button
+                                onClick={() => {
+                                    setDateFilterMode("all");
+                                    setCustomStartDate("");
+                                    setCustomEndDate("");
+                                }}
+                                className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-lg border border-surface-500/20 hover:border-surface-500/40"
+                            >
+                                Clear Date
+                            </button>
+                        )}
+                    </div>
                 </CardContent>
             </Card>
 
@@ -441,7 +627,7 @@ export default function TradesPage() {
                     </CardHeader>
                     <CardContent className="p-0 mt-3">
                         {/* Header Row */}
-                        <div className="grid grid-cols-[80px_70px_100px_60px_70px_80px_80px_36px] gap-2 px-4 py-2 border-b border-surface-500/15 text-[10px] uppercase tracking-widest text-gray-600 font-mono">
+                        <div className="grid grid-cols-[80px_70px_100px_60px_70px_80px_80px_70px_36px] gap-2 px-4 py-2 border-b border-surface-500/15 text-[10px] uppercase tracking-widest text-gray-600 font-mono">
                             <span>Date</span>
                             <span>Pair</span>
                             <span>Type</span>
@@ -449,6 +635,7 @@ export default function TradesPage() {
                             <span>Result</span>
                             <span>Rules</span>
                             <span className="text-right">P&L</span>
+                            <span>Actions</span>
                             <span></span>
                         </div>
 
@@ -460,105 +647,125 @@ export default function TradesPage() {
 
                             return (
                                 <div key={trade.id}>
-                                    <button
-                                        onClick={() =>
-                                            setExpandedId(isExpanded ? null : trade.id)
-                                        }
-                                        className={`w-full grid grid-cols-[80px_70px_100px_60px_70px_80px_80px_36px] gap-2 px-4 py-3 items-center text-sm transition-all duration-200 border-b hover:bg-surface-700/20 ${rulesBroken
+                                    <div className={`flex items-center w-full border-b transition-all duration-200 ${rulesBroken
                                             ? "border-l-2 border-l-neon-red/50 border-b-surface-500/10 bg-neon-red/[0.02]"
                                             : highRR
                                                 ? "border-l-2 border-l-neon-green/30 border-b-surface-500/10 bg-neon-green/[0.01]"
                                                 : "border-l-2 border-l-transparent border-b-surface-500/10"
-                                            }`}
-                                    >
-                                        {/* Date */}
-                                        <span className="text-xs text-gray-400 font-mono text-left">
-                                            {trade.date !== "—"
-                                                ? new Date(trade.date).toLocaleDateString("en-US", {
-                                                    month: "short",
-                                                    day: "numeric",
-                                                })
-                                                : "—"}
-                                        </span>
-
-                                        {/* Pair */}
-                                        <span className="text-xs font-semibold text-white text-left">
-                                            {trade.pair}
-                                        </span>
-
-                                        {/* Trade Type */}
-                                        <span className="text-left">
-                                            <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-700/50 border border-surface-500/20 text-gray-400 font-mono">
-                                                {trade.tradeType}
+                                            }`}>
+                                        <button
+                                            onClick={() =>
+                                                setExpandedId(isExpanded ? null : trade.id)
+                                            }
+                                            className="flex-1 grid grid-cols-[80px_70px_100px_60px_70px_80px_80px_36px] gap-2 px-4 py-3 items-center text-sm hover:bg-surface-700/20"
+                                        >
+                                            {/* Date */}
+                                            <span className="text-xs text-gray-400 font-mono text-left">
+                                                {trade.date !== "—"
+                                                    ? new Date(trade.date).toLocaleDateString("en-US", {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                    })
+                                                    : "—"}
                                             </span>
-                                        </span>
 
-                                        {/* RR */}
-                                        <span
-                                            className={`text-xs font-bold font-mono text-left ${trade.rrRatio >= 5
-                                                ? "text-neon-green"
-                                                : trade.rrRatio > 0
-                                                    ? "text-neon-yellow"
-                                                    : "text-gray-500"
-                                                }`}
-                                        >
-                                            {trade.rrRatio > 0 ? `${trade.rrRatio}R` : "—"}
-                                        </span>
+                                            {/* Pair */}
+                                            <span className="text-xs font-semibold text-white text-left">
+                                                {trade.pair}
+                                            </span>
 
-                                        {/* Result */}
-                                        <span className="text-left">
-                                            <Badge
-                                                variant={
-                                                    trade.outcome === "Win"
-                                                        ? "success"
-                                                        : trade.outcome === "Loss"
-                                                            ? "danger"
-                                                            : "warning"
-                                                }
+                                            {/* Trade Type */}
+                                            <span className="text-left">
+                                                <span className="text-[10px] px-2 py-0.5 rounded-md bg-surface-700/50 border border-surface-500/20 text-gray-400 font-mono">
+                                                    {trade.tradeType}
+                                                </span>
+                                            </span>
+
+                                            {/* RR */}
+                                            <span
+                                                className={`text-xs font-bold font-mono text-left ${trade.rrRatio >= 5
+                                                    ? "text-neon-green"
+                                                    : trade.rrRatio > 0
+                                                        ? "text-neon-yellow"
+                                                        : "text-gray-500"
+                                                    }`}
                                             >
-                                                {trade.outcome}
-                                            </Badge>
-                                        </span>
+                                                {trade.rrRatio > 0 ? `${trade.rrRatio}R` : "—"}
+                                            </span>
 
-                                        {/* Followed Rules */}
-                                        <span className="text-left">
-                                            {trade.followedRules === true ? (
-                                                <span className="flex items-center gap-1 text-xs text-neon-green">
-                                                    <CheckCircle2 className="h-3 w-3" /> Yes
-                                                </span>
-                                            ) : trade.followedRules === false ? (
-                                                <span className="flex items-center gap-1 text-xs text-neon-red">
-                                                    <XCircle className="h-3 w-3" /> No
-                                                </span>
-                                            ) : (
-                                                <span className="text-xs text-gray-600">—</span>
-                                            )}
-                                        </span>
+                                            {/* Result */}
+                                            <span className="text-left">
+                                                <Badge
+                                                    variant={
+                                                        trade.outcome === "Win"
+                                                            ? "success"
+                                                            : trade.outcome === "Loss"
+                                                                ? "danger"
+                                                                : "warning"
+                                                    }
+                                                >
+                                                    {trade.outcome}
+                                                </Badge>
+                                            </span>
 
-                                        {/* P&L */}
-                                        <span
-                                            className={`text-xs font-bold font-mono text-right ${parseFloat(trade.profitLoss) > 0
-                                                ? "text-neon-green"
-                                                : parseFloat(trade.profitLoss) < 0
-                                                    ? "text-neon-red"
-                                                    : "text-gray-500"
-                                                }`}
-                                        >
-                                            {parseFloat(trade.profitLoss) > 0 ? "+" : ""}
-                                            {parseFloat(trade.profitLoss)
-                                                ? parseFloat(trade.profitLoss).toFixed(1)
-                                                : "0"}
-                                        </span>
+                                            {/* Followed Rules */}
+                                            <span className="text-left">
+                                                {trade.followedRules === true ? (
+                                                    <span className="flex items-center gap-1 text-xs text-neon-green">
+                                                        <CheckCircle2 className="h-3 w-3" /> Yes
+                                                    </span>
+                                                ) : trade.followedRules === false ? (
+                                                    <span className="flex items-center gap-1 text-xs text-neon-red">
+                                                        <XCircle className="h-3 w-3" /> No
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-xs text-gray-600">—</span>
+                                                )}
+                                            </span>
 
-                                        {/* Expand icon */}
-                                        <span className="flex justify-center text-gray-600">
-                                            {isExpanded ? (
-                                                <ChevronUp className="h-4 w-4" />
-                                            ) : (
-                                                <ChevronDown className="h-4 w-4" />
-                                            )}
-                                        </span>
-                                    </button>
+                                            {/* P&L */}
+                                            <span
+                                                className={`text-xs font-bold font-mono text-right ${parseFloat(trade.profitLoss) > 0
+                                                    ? "text-neon-green"
+                                                    : parseFloat(trade.profitLoss) < 0
+                                                        ? "text-neon-red"
+                                                        : "text-gray-500"
+                                                    }`}
+                                            >
+                                                {parseFloat(trade.profitLoss) > 0 ? "+" : ""}
+                                                {parseFloat(trade.profitLoss)
+                                                    ? parseFloat(trade.profitLoss).toFixed(1)
+                                                    : "0"}
+                                            </span>
+
+                                            {/* Expand icon */}
+                                            <span className="flex justify-center text-gray-600">
+                                                {isExpanded ? (
+                                                    <ChevronUp className="h-4 w-4" />
+                                                ) : (
+                                                    <ChevronDown className="h-4 w-4" />
+                                                )}
+                                            </span>
+                                        </button>
+
+                                        {/* Action Buttons */}
+                                        <div className="flex items-center gap-2 px-3 pr-4">
+                                            <button
+                                                onClick={() => handleEditTrade(trade)}
+                                                className="p-2 hover:bg-neon-blue/10 rounded-lg text-gray-400 hover:text-neon-blue transition-colors"
+                                                title="Edit trade"
+                                            >
+                                                <Edit2 className="h-4 w-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteTrade(trade.id)}
+                                                className="p-2 hover:bg-neon-red/10 rounded-lg text-gray-400 hover:text-neon-red transition-colors"
+                                                title="Delete trade"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
 
                                     {/* Expanded Detail */}
                                     {isExpanded && <TradeDetail trade={trade} />}
@@ -648,6 +855,17 @@ export default function TradesPage() {
                     </CardContent>
                 </Card>
             )}
+
+            {/* ─── Edit Trade Modal ────────────────────────────────────── */}
+            <EditTradeModal
+                trade={editingTrade}
+                isOpen={isEditModalOpen}
+                onClose={() => {
+                    setIsEditModalOpen(false);
+                    setEditingTrade(null);
+                }}
+                onSave={handleSaveEditedTrade}
+            />
         </div>
     );
 }
