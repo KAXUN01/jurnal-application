@@ -103,6 +103,7 @@ export default function JournalPage() {
 
     const [form, setForm] = useState({
         pair: "",
+        accountId: "",
         tradeType: "",
         date: new Date().toISOString().split("T")[0],
         time: "",
@@ -123,6 +124,23 @@ export default function JournalPage() {
         mistakes: "",
         screenshots: [] as string[],
     });
+
+    const [accounts, setAccounts] = useState<Array<{ id: string; name: string; type: string; balance: number }>>([]);
+
+    useEffect(() => {
+        async function fetchAccounts() {
+            try {
+                const res = await fetch('/api/accounts');
+                if (!res.ok) return;
+                const data = await res.json();
+                setAccounts(data || []);
+                if (data && data.length > 0) setForm((p) => ({ ...p, accountId: p.accountId || data[0].id }));
+            } catch (e) {
+                // ignore
+            }
+        }
+        fetchAccounts();
+    }, []);
 
     // Read pending checklist state on mount
     useEffect(() => {
@@ -168,6 +186,7 @@ export default function JournalPage() {
     // ─── Form validation ─────────────────────────────────────────────
     const isFormValid = useMemo(() => {
         return (
+            form.accountId !== "" &&
             form.pair !== "" &&
             form.tradeType !== "" &&
             form.date !== "" &&
@@ -185,6 +204,7 @@ export default function JournalPage() {
         if (!isFormValid) return;
 
         const entry = {
+            accountId: form.accountId,
             pair: form.pair,
             tradeType: form.tradeType,
             date: form.date,
@@ -353,6 +373,17 @@ export default function JournalPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div>
+                            <FieldLabel>Account</FieldLabel>
+                            <Select value={form.accountId} onChange={(e) => set("accountId", e.target.value)}>
+                                <option value="">Select account...</option>
+                                {accounts.map((a) => (
+                                    <option key={a.id} value={a.id}>
+                                        {a.name} ({a.type}) • {a.balance}
+                                    </option>
+                                ))}
+                            </Select>
+                        </div>
                         <div>
                             <FieldLabel>Pair</FieldLabel>
                             <Select value={form.pair} onChange={(e) => set("pair", e.target.value)}>

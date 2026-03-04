@@ -27,6 +27,7 @@ export async function POST(request: Request) {
         const trade = await prisma.trade.create({
             data: {
                 pair: body.pair,
+                accountId: body.accountId || null,
                 tradeType: body.tradeType,
                 date: body.date,
                 time: body.time,

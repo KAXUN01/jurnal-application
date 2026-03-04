@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
@@ -244,6 +244,12 @@ export default function TradesPage() {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editingTrade, setEditingTrade] = useState<TradeEntry | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
+    const accountMap = useMemo(() => {
+        const m: Record<string, string> = {};
+        accounts.forEach((a) => (m[a.id] = a.name));
+        return m;
+    }, [accounts]);
 
     // Filters - Pair, Type, Result
     const [filterPair, setFilterPair] = useState("");
@@ -345,6 +351,17 @@ export default function TradesPage() {
             }
         }
         fetchTrades();
+        // fetch accounts for display
+        (async () => {
+            try {
+                const res = await fetch('/api/accounts');
+                if (!res.ok) return;
+                const ac = await res.json();
+                setAccounts(ac || []);
+            } catch (e) {
+                // ignore
+            }
+        })();
     }, []);
 
     // ─── Handle edit trade ────────────────────────────────────────────
@@ -627,15 +644,16 @@ export default function TradesPage() {
                     </CardHeader>
                     <CardContent className="p-0 mt-3">
                         {/* Header Row */}
-                        <div className="grid grid-cols-[80px_70px_100px_60px_70px_80px_80px_70px_36px] gap-2 px-4 py-2 border-b border-surface-500/15 text-[10px] uppercase tracking-widest text-gray-600 font-mono">
+                        <div className="grid grid-cols-[80px_70px_120px_100px_60px_70px_80px_80px_70px_36px] gap-2 px-4 py-2 border-b border-surface-500/15 text-[10px] uppercase tracking-widest text-gray-600 font-mono">
                             <span>Date</span>
                             <span>Pair</span>
+                            <span>Account</span>
                             <span>Type</span>
                             <span>RR</span>
                             <span>Result</span>
-                            <span>Rules</span>
                             <span className="text-right">P&L</span>
                             <span>Actions</span>
+                            <span></span>
                             <span></span>
                         </div>
 
@@ -657,7 +675,7 @@ export default function TradesPage() {
                                             onClick={() =>
                                                 setExpandedId(isExpanded ? null : trade.id)
                                             }
-                                            className="flex-1 grid grid-cols-[80px_70px_100px_60px_70px_80px_80px_36px] gap-2 px-4 py-3 items-center text-sm hover:bg-surface-700/20"
+                                            className="flex-1 grid grid-cols-[80px_70px_120px_100px_60px_70px_80px_80px_70px_36px] gap-2 px-4 py-3 items-center text-sm hover:bg-surface-700/20"
                                         >
                                             {/* Date */}
                                             <span className="text-xs text-gray-400 font-mono text-left">
@@ -672,6 +690,11 @@ export default function TradesPage() {
                                             {/* Pair */}
                                             <span className="text-xs font-semibold text-white text-left">
                                                 {trade.pair}
+                                            </span>
+
+                                            {/* Account */}
+                                            <span className="text-xs text-gray-300 text-left">
+                                                {accountMap[trade.accountId || ""] || "—"}
                                             </span>
 
                                             {/* Trade Type */}
@@ -736,6 +759,30 @@ export default function TradesPage() {
                                                 {parseFloat(trade.profitLoss)
                                                     ? parseFloat(trade.profitLoss).toFixed(1)
                                                     : "0"}
+                                            </span>
+
+                                            {/* Actions: Edit / Delete */}
+                                            <span className="flex items-center gap-2">
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleEditTrade(trade);
+                                                    }}
+                                                    className="p-1 rounded-md hover:bg-surface-700/40"
+                                                    title="Edit"
+                                                >
+                                                    <svg className="h-4 w-4 text-gray-300" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z"/><path d="M20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/></svg>
+                                                </button>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleDeleteTrade(trade.id);
+                                                    }}
+                                                    className="p-1 rounded-md hover:bg-surface-700/40"
+                                                    title="Delete"
+                                                >
+                                                    <svg className="h-4 w-4 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 6h18"/><path d="M8 6v14a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2V6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                                </button>
                                             </span>
 
                                             {/* Expand icon */}

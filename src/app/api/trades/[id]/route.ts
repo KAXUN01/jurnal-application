@@ -41,6 +41,7 @@ export async function PUT(
         const trade = await prisma.trade.update({
             where: { id: params.id },
             data: {
+                accountId: body.accountId || null,
                 pair: body.pair,
                 tradeType: body.tradeType,
                 date: body.date,

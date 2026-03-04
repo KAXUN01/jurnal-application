@@ -55,5 +55,35 @@ if (process.env.NODE_ENV !== "production") {
         .catch((e) => {
             console.error("failed to create Trade table:", e);
         });
+
+    // Create accounts table and ensure Trade has accountId column
+    prisma
+        .$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Account" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "name" TEXT NOT NULL,
+          "type" TEXT NOT NULL,
+          "balance" REAL NOT NULL,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL
+      );
+    `
+        .catch((e) => {
+            console.error("failed to create Account table:", e);
+        });
+
+    // Add accountId column to Trade if missing
+    (async () => {
+        try {
+            const cols: any = await prisma.$queryRaw`PRAGMA table_info('Trade')`;
+            const hasAccount = cols && Array.isArray(cols) && cols.find((c: any) => c.name === 'accountId');
+            if (!hasAccount) {
+                await prisma.$executeRaw`ALTER TABLE "Trade" ADD COLUMN "accountId" TEXT`;
+            }
+        } catch (e) {
+            // If alter fails, log but don't crash dev server
+            console.error('failed to ensure accountId column on Trade:', e);
+        }
+    })();
 }
 
