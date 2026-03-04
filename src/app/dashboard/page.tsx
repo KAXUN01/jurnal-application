@@ -251,7 +251,12 @@ export default function DashboardPage() {
     const equityData = useMemo(() => {
         let cumulative = 0;
         return trades.map((t) => {
-            cumulative += parseFloat(t.profitLoss) || 0;
+            const amount = parseFloat(t.profitLoss) || 0;
+            if (t.outcome === "Loss") {
+                cumulative -= amount;
+            } else {
+                cumulative += amount;
+            }
             return {
                 date: t.date !== "—"
                     ? new Date(t.date).toLocaleDateString("en-US", {
@@ -312,7 +317,12 @@ export default function DashboardPage() {
             if (t.tradeType === "—") return;
             if (!types[t.tradeType]) types[t.tradeType] = { wins: 0, total: 0, pnl: 0 };
             types[t.tradeType].total++;
-            types[t.tradeType].pnl += parseFloat(t.profitLoss) || 0;
+            const amount = parseFloat(t.profitLoss) || 0;
+            if (t.outcome === "Loss") {
+                types[t.tradeType].pnl -= amount;
+            } else {
+                types[t.tradeType].pnl += amount;
+            }
             if (t.outcome === "Win") types[t.tradeType].wins++;
         });
         return Object.entries(types)
@@ -332,7 +342,12 @@ export default function DashboardPage() {
             if (t.pair === "—") return;
             if (!pairs[t.pair]) pairs[t.pair] = { wins: 0, total: 0, pnl: 0 };
             pairs[t.pair].total++;
-            pairs[t.pair].pnl += parseFloat(t.profitLoss) || 0;
+            const amount = parseFloat(t.profitLoss) || 0;
+            if (t.outcome === "Loss") {
+                pairs[t.pair].pnl -= amount;
+            } else {
+                pairs[t.pair].pnl += amount;
+            }
             if (t.outcome === "Win") pairs[t.pair].wins++;
         });
         return Object.entries(pairs)
