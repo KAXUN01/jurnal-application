@@ -40,12 +40,18 @@ model Trade {
 }
 
 model Account {
-  id        String   @id @default(cuid())
-  name      String
-  type      String   // e.g. "funded", "real", "demo"
-  balance   Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  type            String   // e.g. "funded", "personal", "demo"
+  balance         Float
+  accountSize     String   // e.g. "5k", "10k", "100k"
+  brokerName      String   // e.g. "IC Markets", "Deriv"
+  currency        String?  // e.g. "USD", "EUR"
+  leverage        String?  // e.g. "1:100", "1:500"
+  startDate       String?  // When the account was opened
+  notes           String?  // Additional notes
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  trades    Trade[]
+  trades          Trade[]
 }

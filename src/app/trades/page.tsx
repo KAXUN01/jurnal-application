@@ -46,6 +46,8 @@ interface TradeEntry {
     emotion: string;
     followedRules: boolean | null;
     mistakes: string;
+    accountId?: string;
+    accountType?: string;
     // Legacy fields from old trade format
     symbol?: string;
     side?: string;
@@ -244,10 +246,15 @@ export default function TradesPage() {
     const [expandedId, setExpandedId] = useState<string | null>(null);
     const [editingTrade, setEditingTrade] = useState<TradeEntry | null>(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-    const [accounts, setAccounts] = useState<Array<{ id: string; name: string }>>([]);
+    const [accounts, setAccounts] = useState<Array<{ id: string; name: string; type: string }>>([]);
     const accountMap = useMemo(() => {
         const m: Record<string, string> = {};
         accounts.forEach((a) => (m[a.id] = a.name));
+        return m;
+    }, [accounts]);
+    const accountTypeMap = useMemo(() => {
+        const m: Record<string, string> = {};
+        accounts.forEach((a) => (m[a.id] = a.type));
         return m;
     }, [accounts]);
 
@@ -255,6 +262,7 @@ export default function TradesPage() {
     const [filterPair, setFilterPair] = useState("");
     const [filterType, setFilterType] = useState("");
     const [filterResult, setFilterResult] = useState("");
+    const [filterAccountType, setFilterAccountType] = useState("");
 
     // Filters - Date Range
     const [dateFilterMode, setDateFilterMode] = useState<
@@ -339,6 +347,7 @@ export default function TradesPage() {
                     chochConfirmed: t.chochConfirmed ?? null,
                     mistakes: t.mistakes || "",
                     date: t.date || "—",
+                    accountId: t.accountId,
                 }));
 
                 // Sort by date desc
@@ -424,6 +433,12 @@ export default function TradesPage() {
         // Apply outcome filter
         if (filterResult && t.outcome !== filterResult) return false;
 
+        // Apply account type filter
+        if (filterAccountType && t.accountId) {
+            const accountType = accountTypeMap[t.accountId];
+            if (accountType !== filterAccountType) return false;
+        }
+
         // Apply date range filter
         if (dateFilterMode !== "all") {
             const dateRange = getDateRangeForMode(dateFilterMode);
@@ -443,7 +458,13 @@ export default function TradesPage() {
     const wins = filtered.filter((t) => t.outcome === "Win").length;
     const losses = filtered.filter((t) => t.outcome === "Loss").length;
     const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : "0";
-    const totalPnl = filtered.reduce((sum, t) => sum + (parseFloat(t.profitLoss) || 0), 0);
+    const totalPnl = filtered.reduce((sum, t) => {
+        const amount = parseFloat(t.profitLoss) || 0;
+        if (t.outcome === "Loss") {
+            return sum - amount;
+        }
+        return sum + amount;
+    }, 0);
     const avgRR = totalTrades > 0
         ? (filtered.reduce((sum, t) => sum + (t.rrRatio || 0), 0) / totalTrades).toFixed(1)
         : "0";
@@ -538,12 +559,23 @@ export default function TradesPage() {
                             <option value="Loss">Loss</option>
                             <option value="BE">Break Even</option>
                         </Select>
-                        {(filterPair || filterType || filterResult) && (
+                        <Select
+                            value={filterAccountType}
+                            onChange={(e) => setFilterAccountType(e.target.value)}
+                            className="w-40 text-xs"
+                        >
+                            <option value="">All Account Types</option>
+                            <option value="demo">Demo</option>
+                            <option value="funded">Funded</option>
+                            <option value="personal">Personal</option>
+                        </Select>
+                        {(filterPair || filterType || filterResult || filterAccountType) && (
                             <button
                                 onClick={() => {
                                     setFilterPair("");
                                     setFilterType("");
                                     setFilterResult("");
+                                    setFilterAccountType("");
                                 }}
                                 className="text-xs text-gray-500 hover:text-gray-300 transition-colors px-2 py-1 rounded-lg border border-surface-500/20 hover:border-surface-500/40"
                             >

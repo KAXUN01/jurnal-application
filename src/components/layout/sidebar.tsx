@@ -10,6 +10,7 @@ import {
     TrendingUp,
     Newspaper,
     Calculator,
+    Wallet,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -20,6 +21,11 @@ const navItems = [
         label: "Dashboard",
         href: "/dashboard",
         icon: LayoutDashboard,
+    },
+    {
+        label: "Accounts",
+        href: "/accounts",
+        icon: Wallet,
     },
     {
         label: "Checklist",

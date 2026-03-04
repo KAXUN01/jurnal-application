@@ -23,12 +23,19 @@ export async function PUT(
     try {
         const body = await request.json();
         const balance = typeof body.balance === "string" ? parseFloat(body.balance) : body.balance || 0;
+        
         const updated = await prisma.account.update({
             where: { id: params.id },
             data: {
                 name: body.name,
                 type: body.type,
                 balance,
+                accountSize: body.accountSize,
+                brokerName: body.brokerName,
+                currency: body.currency,
+                leverage: body.leverage,
+                startDate: body.startDate,
+                notes: body.notes,
             },
         });
         return NextResponse.json(updated || null);

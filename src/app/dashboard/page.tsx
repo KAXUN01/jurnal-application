@@ -195,10 +195,13 @@ export default function DashboardPage() {
             total > 0
                 ? trades.reduce((s, t) => s + (t.rrRatio || 0), 0) / total
                 : 0;
-        const totalPnl = trades.reduce(
-            (s, t) => s + (parseFloat(t.profitLoss) || 0),
-            0
-        );
+        const totalPnl = trades.reduce((s, t) => {
+            const amount = parseFloat(t.profitLoss) || 0;
+            if (t.outcome === "Loss") {
+                return s - amount;
+            }
+            return s + amount;
+        }, 0);
         const rulesFollowed = trades.filter((t) => t.followedRules === true).length;
         const rulesBroken = trades.filter((t) => t.followedRules === false).length;
         const rulesAnswered = trades.filter((t) => t.followedRules !== null).length;
