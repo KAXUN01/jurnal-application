@@ -29,6 +29,7 @@ import {
     ResponsiveContainer,
     CartesianGrid,
 } from "recharts";
+import { DailySummaryCalendar } from "@/components/daily-summary-calendar";
 
 // ─── Types ───────────────────────────────────────────────────────────
 interface TradeEntry {
@@ -829,6 +830,9 @@ export default function DashboardPage() {
                     </CardContent>
                 </Card>
             </div>
+
+            {/* ─── Daily Summary Calendar ──────────────────────────────── */}
+            <DailySummaryCalendar trades={trades} />
 
             {/* ─── Insights Row ────────────────────────────────────────── */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
