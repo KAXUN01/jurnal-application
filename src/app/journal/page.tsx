@@ -394,6 +394,7 @@ export default function JournalPage() {
                                 <option value="UF">UF (USD/CHF)</option>
                                 <option value="UCAD">UCAD (USD/CAD)</option>
                                 <option value="AU">AU (AUD/USD)</option>
+                                <option value="US30">US30 (Dow Jones)</option>
                             </Select>
                         </div>
                         <div>

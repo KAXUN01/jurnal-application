@@ -39,6 +39,7 @@ const FOREX_PAIRS: ForexPair[] = [
     { symbol: "GBPJPY", label: "GBP/JPY", journalKey: "GJ", pipStep: 0.01, pipValuePerLot: 6.67, isJpy: true },
     { symbol: "AUDJPY", label: "AUD/JPY", journalKey: "AJ", pipStep: 0.01, pipValuePerLot: 6.67, isJpy: true },
     { symbol: "XAUUSD", label: "XAU/USD", journalKey: "XAUUSD", pipStep: 0.01, pipValuePerLot: 1, isJpy: false },
+    { symbol: "US30", label: "US30", journalKey: "US30", pipStep: 1, pipValuePerLot: 1, isJpy: false },
 ];
 
 // ─── Props ───────────────────────────────────────────────────────────
@@ -215,7 +216,7 @@ export function PositionCalcModal({ open, onClose, onApply, prefill }: PositionC
                                     className={`px-2 py-1 rounded-md text-[10px] font-bold font-mono transition-all duration-200 border ${selectedPair === p.symbol
                                         ? p.isJpy
                                             ? "bg-neon-red/10 text-neon-red border-neon-red/25"
-                                            : p.symbol === "XAUUSD"
+                                            : (p.symbol === "XAUUSD" || p.symbol === "US30")
                                                 ? "bg-neon-yellow/10 text-neon-yellow border-neon-yellow/25"
                                                 : "bg-neon-green/10 text-neon-green border-neon-green/25"
                                         : "text-gray-500 border-surface-500/20 hover:text-gray-300"
@@ -270,14 +271,14 @@ export function PositionCalcModal({ open, onClose, onApply, prefill }: PositionC
                             icon={TrendingUp}
                             value={entry}
                             onChange={setEntry}
-                            placeholder={pair.isJpy ? "150.500" : pair.symbol === "XAUUSD" ? "2350.00" : "1.0850"}
+                            placeholder={pair.isJpy ? "150.500" : pair.symbol === "XAUUSD" ? "2350.00" : pair.symbol === "US30" ? "39000" : "1.0850"}
                         />
                         <ModalInput
                             label="Stop Loss"
                             icon={ShieldX}
                             value={stopLoss}
                             onChange={setStopLoss}
-                            placeholder={pair.isJpy ? "150.000" : pair.symbol === "XAUUSD" ? "2340.00" : "1.0800"}
+                            placeholder={pair.isJpy ? "150.000" : pair.symbol === "XAUUSD" ? "2340.00" : pair.symbol === "US30" ? "38900" : "1.0800"}
                         />
                     </div>
 

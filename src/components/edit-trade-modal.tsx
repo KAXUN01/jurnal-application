@@ -194,6 +194,9 @@ export default function EditTradeModal({
                                         <option value="AU">
                                             AU (AUD/USD)
                                         </option>
+                                        <option value="US30">
+                                            US30 (Dow Jones)
+                                        </option>
                                     </Select>
                                 </div>
                                 <div>
