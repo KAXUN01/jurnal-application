@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-const MODEL = "meta/llama-3.3-70b-instruct";
+const MODEL = process.env.LLM_MODEL || "meta/llama-3.3-70b-instruct";
 
 export async function POST(request: Request) {
     try {
@@ -30,14 +30,24 @@ export async function POST(request: Request) {
         // Prepare context for AI
         const tradesContext = trades.map(t => ({
             date: t.date,
+            time: t.time,
+            entryTime: t.entryExecutionTime,
             pair: t.pair,
+            direction: t.tradeDirection,
             outcome: t.outcome,
             pnl: t.profitLoss,
+            pnlPercent: t.profitLossPercent,
             rr: t.rrRatio,
             type: t.tradeType,
-            rules: (t as any).followedRules ? "Followed" : (t as any).followedRules === false ? "Broken" : "Unknown",
+            entryPrice: t.entryPrice,
+            exitPrice: t.exitPrice,
+            stopLoss: t.stopLoss,
+            takeProfit: t.takeProfit,
+            duration: t.tradeDuration,
+            lotSize: t.lotSize,
+            rules: (t as Record<string, unknown>).followedRules ? "Followed" : (t as Record<string, unknown>).followedRules === false ? "Broken" : "Unknown",
             notes: `${t.beforeTrade} ${t.duringTrade} ${t.afterTrade}`.trim(),
-            mistakes: (t as any).mistakes
+            mistakes: (t as Record<string, unknown>).mistakes
         }));
 
         // ─── Fetch the previous (latest) analysis for comparison context ───
@@ -294,8 +304,8 @@ Ensure the output is 100% valid JSON and nothing else.
             comparison,
         });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("AI Analysis Error:", error);
-        return NextResponse.json({ error: `Failed to generate analysis: ${error.message}` }, { status: 500 });
+        return NextResponse.json({ error: `Failed to generate analysis: ${error instanceof Error ? error.message : "Unknown error"}` }, { status: 500 });
     }
 }

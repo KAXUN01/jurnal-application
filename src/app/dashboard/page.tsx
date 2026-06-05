@@ -9,7 +9,6 @@ import {
     BarChart3,
     Award,
     AlertTriangle,
-    Brain,
     Crosshair,
     ArrowUpRight,
     ArrowDownRight,
@@ -21,8 +20,6 @@ import {
 import {
     AreaChart,
     Area,
-    BarChart,
-    Bar,
     PieChart,
     Pie,
     Cell,
@@ -802,7 +799,7 @@ export default function DashboardPage() {
                                 <div className="p-2 rounded-lg bg-neon-red/10 text-neon-red mt-0.5"><AlertTriangle className="h-3 w-3" /></div>
                                 <div>
                                     <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider">Critical Leak</p>
-                                    <p className="text-xs font-semibold text-white">"{topMistake.text}"</p>
+                                    <p className="text-xs font-semibold text-white">&quot;{topMistake.text}&quot;</p>
                                     <p className="text-[10px] text-neon-red font-mono mt-0.5">Recorded {topMistake.count} times</p>
                                 </div>
                             </div>

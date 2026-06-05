@@ -15,6 +15,7 @@ import {
     Target,
     ChevronLeft,
     ChevronRight,
+    Database,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -63,6 +64,11 @@ const navItems = [
         label: "Calculator",
         href: "/calculator",
         icon: Calculator,
+    },
+    {
+        label: "Data Management",
+        href: "/data-management",
+        icon: Database,
     },
 ];
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useSession, signOut } from "next-auth/react";
-import { LogOut, User, Mail, Shield } from "lucide-react";
+import { LogOut, Mail, Shield } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 

@@ -14,7 +14,6 @@ import {
     TrendingUp,
     Send,
     Activity,
-    LineChart,
     CheckCircle2,
     XCircle,
     Info,
@@ -25,28 +24,6 @@ import {
     ArrowDownRight,
     Minus
 } from "lucide-react";
-import {
-    AreaChart,
-    Area,
-    XAxis,
-    YAxis,
-    CartesianGrid,
-    Tooltip,
-    ResponsiveContainer,
-} from "recharts";
-
-// ─── Dummy Data for Charts ──────────────────────────────────────────
-const MOCK_EQUITY_DATA = [
-    { name: "Week 1", value: 10000 },
-    { name: "Week 2", value: 10250 },
-    { name: "Week 3", value: 10100 },
-    { name: "Week 4", value: 10600 },
-    { name: "Week 5", value: 10450 },
-    { name: "Week 6", value: 11200 },
-    { name: "Week 7", value: 11000 },
-    { name: "Week 8", value: 11800 },
-];
-
 // ─── Types ─────────────────────────────────────────────────────────
 
 type AIAnalysisResponse = {
@@ -74,7 +51,7 @@ type ComparisonResult = {
 
 type AiAnalysisRecord = AIAnalysisResponse & {
     id: string;
-    filters: any;
+    filters: { analysisTarget?: string; [key: string]: unknown };
     createdAt: string;
     comparison?: ComparisonResult | null;
 };
@@ -92,7 +69,7 @@ function InsightCard({ text }: { text: string }) {
     );
 }
 
-function SectionHeader({ title, icon: Icon, color }: { title: string, icon: any, color: "green" | "purple" | "blue" | "yellow" | "red" | "cyan" }) {
+function SectionHeader({ title, icon: Icon, color }: { title: string, icon: React.ElementType, color: "green" | "purple" | "blue" | "yellow" | "red" | "cyan" }) {
     const colorClasses = {
         green: "text-neon-green bg-neon-green/10 border-neon-green/20",
         purple: "text-neon-purple bg-neon-purple/10 border-neon-purple/20",
@@ -182,9 +159,9 @@ export default function AICoachPage() {
                 { role: "assistant", content: "I have completed the analysis and updated your dashboard with my findings. Feel free to ask me for more details." }
             ]);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            alert(`Error running analysis: ${error.message || error}`);
+            alert(`Error running analysis: ${error instanceof Error ? error.message : error}`);
         } finally {
             setIsAnalyzing(false);
         }
@@ -218,9 +195,9 @@ export default function AICoachPage() {
             const data = await response.json();
             setChatMessages(prev => [...prev, { role: "assistant", content: data.response }]);
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(error);
-            setChatMessages(prev => [...prev, { role: "assistant", content: `Error: ${error.message || "Failed to connect to AI"}` }]);
+            setChatMessages(prev => [...prev, { role: "assistant", content: `Error: ${error instanceof Error ? error.message : "Failed to connect to AI"}` }]);
         } finally {
             setIsChatting(false);
         }
@@ -388,7 +365,7 @@ export default function AICoachPage() {
                             </div>
                             <h2 className="text-2xl font-bold text-white mb-2">Awaiting Analysis</h2>
                             <p className="text-gray-400 max-w-md">
-                                Adjust your filters on the left and click "Run AI Analysis" to generate comprehensive insights from your trading data using our advanced neural network.
+                                Adjust your filters on the left and click &quot;Run AI Analysis&quot; to generate comprehensive insights from your trading data using our advanced neural network.
                             </p>
                         </div>
                     ) : (
@@ -486,7 +463,7 @@ export default function AICoachPage() {
                                     <div className="space-y-4">
                                         <div className="p-4 rounded-xl bg-surface-800/50 border border-surface-600">
                                             <p className="text-sm text-gray-300 leading-relaxed">
-                                                "{analysisData.executiveSummary.text}"
+                                                &quot;{analysisData.executiveSummary.text}&quot;
                                             </p>
                                         </div>
                                         <div className="grid grid-cols-2 gap-4">
@@ -537,7 +514,7 @@ export default function AICoachPage() {
                                     </div>
                                     <div className="p-4 rounded-xl bg-surface-800/50 border border-neon-purple/20">
                                         <p className="text-sm text-gray-300 leading-relaxed">
-                                            "{analysisData.psychology.analysis}"
+                                            &quot;{analysisData.psychology.analysis}&quot;
                                         </p>
                                     </div>
                                 </div>
@@ -622,7 +599,7 @@ export default function AICoachPage() {
                                     <SectionHeader title="How You Improved" icon={ArrowUpRight} color="blue" />
                                     <div className="space-y-6">
                                         <p className="text-sm text-gray-300 leading-relaxed p-4 rounded-xl bg-surface-800/50 border border-surface-600">
-                                            "{analysisData.comparison.summary}"
+                                            &quot;{analysisData.comparison.summary}&quot;
                                         </p>
                                         
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -686,7 +663,7 @@ export default function AICoachPage() {
                                         <h3 className="text-xl font-bold text-white mb-2">{analysisData.profile.title}</h3>
                                         <div className="flex flex-wrap justify-center gap-2">
                                             {analysisData.profile.badges.map(b => (
-                                                <Badge key={b} variant="secondary" className="bg-surface-800">{b}</Badge>
+                                                <Badge key={b} variant="neutral" className="bg-surface-800">{b}</Badge>
                                             ))}
                                         </div>
                                         <div className="mt-6 text-left space-y-3">

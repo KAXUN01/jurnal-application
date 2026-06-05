@@ -10,20 +10,15 @@ import {
     TrendingUp,
     ShieldCheck,
     Brain,
-    Zap,
-    Activity,
     CheckCircle2,
-    CalendarDays,
     Award,
-    AlertTriangle,
-    BarChart3,
     Plus,
     X,
     Lightbulb,
     Flag,
-    ArrowUpRight,
-    ArrowDownRight,
-    Flame
+    Flame,
+    BarChart3,
+    Trash2
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -109,7 +104,7 @@ function CircularProgress({ value, max, color, size = 120, strokeWidth = 8 }: { 
     );
 }
 
-function KPICard({ title, value, icon: Icon, color, delay }: { title: string, value: string | number, icon: any, color: "green" | "blue" | "purple" | "yellow" | "cyan" | "red", delay: string }) {
+function KPICard({ title, value, icon: Icon, color, delay }: { title: string, value: string | number, icon: React.ElementType, color: "green" | "blue" | "purple" | "yellow" | "cyan" | "red", delay: string }) {
     const colorStyles = {
         green: "text-neon-green bg-neon-green/10 border-neon-green/20 kpi-glow-green text-gradient-green",
         blue: "text-neon-blue bg-neon-blue/10 border-neon-blue/20 kpi-glow-blue text-gradient-blue",
@@ -142,7 +137,6 @@ export default function GoalsPage() {
     
     // Modal state
     const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-    const [builderStep, setBuilderStep] = useState(1);
     const [newGoal, setNewGoal] = useState<Partial<Goal>>({
         category: "profit", timeframe: "monthly", priority: "medium", unit: "$", status: "active", currentValue: 0
     });
@@ -185,7 +179,7 @@ export default function GoalsPage() {
         let currentStreak = 0;
         let maxStreak = 0;
         // Simplified streak logic: count consecutive days where AT LEAST ONE habit is logged
-        const habitDates = [...new Set(habits.filter(h => h.completed).map(h => h.date))].sort();
+        const habitDates = Array.from(new Set(habits.filter(h => h.completed).map(h => h.date))).sort();
         let tempStreak = 0;
         for (let i = 0; i < habitDates.length; i++) {
             if (i === 0) { tempStreak = 1; }
@@ -271,7 +265,6 @@ export default function GoalsPage() {
                 const created = await res.json();
                 setGoals([created, ...goals]);
                 setIsBuilderOpen(false);
-                setBuilderStep(1);
                 setNewGoal({ category: "profit", timeframe: "monthly", priority: "medium", unit: "$", status: "active", currentValue: 0 });
             } else {
                 const err = await res.json();
@@ -297,6 +290,20 @@ export default function GoalsPage() {
             if (res.ok) {
                 const updated = await res.json();
                 setGoals(prev => prev.map(g => g.id === goal.id ? updated : g));
+            }
+        } catch(e) { console.error(e); }
+    };
+
+    const deleteGoal = async (id: string) => {
+        if (!confirm("Are you sure you want to delete this goal?")) return;
+        try {
+            const res = await fetch(`/api/goals/${id}`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                setGoals(prev => prev.filter(g => g.id !== id));
+            } else {
+                alert("Failed to delete goal");
             }
         } catch(e) { console.error(e); }
     };
@@ -393,7 +400,7 @@ export default function GoalsPage() {
                         <CheckCircle2 className="h-5 w-5 text-neon-green" />
                         Daily Habits
                     </h2>
-                    <Badge variant="outline" className="border-neon-green/30 text-neon-green">
+                    <Badge variant="neutral" className="border-neon-green/30 text-neon-green">
                         {metrics.currentStreak} Day Streak
                     </Badge>
                 </div>
@@ -444,10 +451,10 @@ export default function GoalsPage() {
                     </h2>
                 </div>
                 
-                {goals.length === 0 ? (
+                {goals.filter(g => g.status !== 'completed').length === 0 ? (
                     <div className="glass-card rounded-2xl p-12 text-center border border-white/5 flex flex-col items-center">
                         <Target className="h-10 w-10 text-gray-600 mb-4" />
-                        <h3 className="text-lg font-bold text-gray-300 mb-2">No Goals Set</h3>
+                        <h3 className="text-lg font-bold text-gray-300 mb-2">No Active Goals</h3>
                         <p className="text-gray-500 text-sm mb-6">Goals turn journaling into a performance system.</p>
                         <button onClick={() => setIsBuilderOpen(true)} className="px-4 py-2 rounded-xl bg-surface-700 hover:bg-surface-600 text-white transition-colors">
                             Create First Goal
@@ -455,7 +462,7 @@ export default function GoalsPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {goals.map((goal, i) => {
+                        {goals.filter(g => g.status !== 'completed').map((goal, i) => {
                             const percent = Math.min((goal.currentValue / goal.targetValue) * 100, 100);
                             const catColors: Record<string, string> = {
                                 profit: "neon-green", consistency: "neon-blue", risk: "neon-purple", psychology: "neon-red", strategy: "neon-yellow"
@@ -465,11 +472,20 @@ export default function GoalsPage() {
                             return (
                                 <div key={goal.id} className={`glass-card rounded-2xl p-5 border border-white/5 relative overflow-hidden hover:border-${c}/30 transition-all animate-slide-up-fade stagger-${(i%5)+1}`}>
                                     <div className="flex justify-between items-start mb-4">
-                                        <Badge variant="outline" className={`border-${c}/30 text-${c} bg-${c}/5 uppercase tracking-widest text-[10px] font-mono`}>
+                                        <Badge variant="neutral" className={`border-${c}/30 text-${c} bg-${c}/5 uppercase tracking-widest text-[10px] font-mono`}>
                                             {goal.category}
                                         </Badge>
-                                        <div className="text-[10px] text-gray-500 font-mono">
-                                            Due {new Date(goal.endDate).toLocaleDateString()}
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-[10px] text-gray-500 font-mono">
+                                                Due {new Date(goal.endDate).toLocaleDateString()}
+                                            </div>
+                                            <button 
+                                                onClick={() => deleteGoal(goal.id)}
+                                                className="text-gray-500 hover:text-red-400 transition-colors"
+                                                title="Delete Goal"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
                                         </div>
                                     </div>
                                     <h3 className="text-lg font-bold text-white mb-1">{goal.title}</h3>
@@ -516,6 +532,51 @@ export default function GoalsPage() {
                     </div>
                 )}
             </div>
+
+            {/* ─── Achieved Goals List ─────────────────────────────────── */}
+            {goals.filter(g => g.status === 'completed').length > 0 && (
+                <div className="mt-12 animate-slide-up-fade stagger-4">
+                    <div className="flex items-center gap-2 mb-6">
+                        <CheckCircle2 className="h-5 w-5 text-neon-green" />
+                        <h2 className="text-lg font-bold text-white tracking-wide font-mono uppercase">Achieved Goals</h2>
+                    </div>
+                    <div className="space-y-3">
+                        {goals.filter(g => g.status === 'completed').map((goal, i) => {
+                            const catColors: Record<string, string> = {
+                                profit: "neon-green", consistency: "neon-blue", risk: "neon-purple", psychology: "neon-red", strategy: "neon-yellow"
+                            };
+                            const c = catColors[goal.category] || "white";
+                            return (
+                                <div key={goal.id} className={`glass-card rounded-xl p-4 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:border-${c}/30 transition-all animate-slide-up-fade stagger-${(i%5)+1}`}>
+                                    <div className="flex items-center gap-4">
+                                        <div className={`p-2 bg-${c}/10 rounded-lg text-${c}`}>
+                                            <Trophy className="h-5 w-5" />
+                                        </div>
+                                        <div>
+                                            <h3 className="font-bold text-white">{goal.title}</h3>
+                                            <div className="text-xs text-gray-500 font-mono mt-1">
+                                                Achieved: {goal.targetValue}{goal.unit}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-4">
+                                        <Badge variant="neutral" className={`border-${c}/30 text-${c} bg-${c}/5 uppercase tracking-widest text-[10px] font-mono shrink-0`}>
+                                            {goal.category}
+                                        </Badge>
+                                        <button 
+                                            onClick={() => deleteGoal(goal.id)}
+                                            className="text-gray-500 hover:text-red-400 transition-colors p-1"
+                                            title="Delete Goal"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
 
             {/* ─── Achievements ────────────────────────────────────────── */}
             <div className="mt-12 animate-slide-up-fade stagger-5">

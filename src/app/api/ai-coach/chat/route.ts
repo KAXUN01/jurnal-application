@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-const MODEL = "meta/llama-3.3-70b-instruct";
+const MODEL = process.env.LLM_MODEL || "meta/llama-3.3-70b-instruct";
 
 export async function POST(request: Request) {
     try {
@@ -23,11 +23,22 @@ export async function POST(request: Request) {
 
         const tradesContext = trades.map(t => ({
             date: t.date,
+            time: t.time,
+            entryTime: t.entryExecutionTime,
             pair: t.pair,
+            direction: t.tradeDirection,
             outcome: t.outcome,
             pnl: t.profitLoss,
+            pnlPercent: t.profitLossPercent,
             rr: t.rrRatio,
             type: t.tradeType,
+            entryPrice: t.entryPrice,
+            exitPrice: t.exitPrice,
+            stopLoss: t.stopLoss,
+            takeProfit: t.takeProfit,
+            duration: t.tradeDuration,
+            lotSize: t.lotSize,
+            notes: `${t.beforeTrade} ${t.duringTrade} ${t.afterTrade}`.trim()
         }));
 
         const systemPrompt = `
@@ -42,7 +53,7 @@ Base your advice specifically on the data provided if relevant.
         // Format history for OpenRouter
         const messages = [
             { role: "system", content: systemPrompt },
-            ...history.map((msg: any) => ({
+            ...history.map((msg: { role: string; content: string }) => ({
                 role: msg.role === "user" ? "user" : "assistant",
                 content: msg.content
             })),
@@ -71,8 +82,8 @@ Base your advice specifically on the data provided if relevant.
 
         return NextResponse.json({ response: content });
 
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("AI Chat Error:", error);
-        return NextResponse.json({ error: `Failed to generate chat response: ${error.message}` }, { status: 500 });
+        return NextResponse.json({ error: `Failed to generate chat response: ${error instanceof Error ? error.message : "Unknown error"}` }, { status: 500 });
     }
 }
