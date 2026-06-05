@@ -11,6 +11,7 @@ import {
     Newspaper,
     Calculator,
     Wallet,
+    Brain,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -43,6 +44,11 @@ const navItems = [
         icon: TrendingUp,
     },
     {
+        label: "AI Coach",
+        href: "/ai-coach",
+        icon: Brain,
+    },
+    {
         label: "News",
         href: "/news",
         icon: Newspaper,
@@ -61,7 +67,7 @@ export function Sidebar() {
     return (
         <aside
             className={cn(
-                "fixed left-0 top-0 z-40 h-screen border-r border-surface-600/50 bg-surface-900/95 backdrop-blur-xl transition-all duration-300 flex flex-col",
+                "fixed left-0 top-0 z-40 h-screen border-r border-surface-600/50 bg-surface-900/95 backdrop-blur-xl transition-all duration-300 hidden md:flex flex-col",
                 collapsed ? "w-[68px]" : "w-[240px]"
             )}
         >
