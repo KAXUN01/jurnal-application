@@ -16,6 +16,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Database,
+    Landmark,
 } from "lucide-react";
 import { useState } from "react";
 
@@ -29,6 +30,11 @@ const navItems = [
         label: "Accounts",
         href: "/accounts",
         icon: Wallet,
+    },
+    {
+        label: "Withdrawals",
+        href: "/withdrawals",
+        icon: Landmark,
     },
     {
         label: "Checklist",

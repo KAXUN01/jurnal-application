@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
-        const [trades, accounts, goals, habits, aiAnalyses, users] =
+        const [trades, accounts, goals, habits, aiAnalyses, users, transactions] =
             await Promise.all([
                 prisma.trade.count(),
                 prisma.account.count(),
@@ -13,6 +13,7 @@ export async function GET() {
                 prisma.habit.count(),
                 prisma.aiAnalysis.count(),
                 prisma.user.count(),
+                prisma.transaction.count(),
             ]);
 
         // Estimate database size based on record counts
@@ -22,7 +23,8 @@ export async function GET() {
             goals * 512 +
             habits * 256 +
             aiAnalyses * 4096 +
-            users * 256;
+            users * 256 +
+            transactions * 1024;
 
         return NextResponse.json({
             trades,
@@ -31,7 +33,8 @@ export async function GET() {
             habits,
             aiAnalyses,
             users,
-            totalRecords: trades + accounts + goals + habits + aiAnalyses + users,
+            transactions,
+            totalRecords: trades + accounts + goals + habits + aiAnalyses + users + transactions,
             estimatedSizeBytes,
             estimatedSizeFormatted: formatBytes(estimatedSizeBytes),
         });

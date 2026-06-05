@@ -44,6 +44,7 @@ async function parseBackupFile(
             "goals",
             "habits",
             "aiAnalyses",
+            "transactions",
         ];
     }
 
@@ -160,6 +161,7 @@ export async function POST(request: Request) {
             ["goals", "goals", prisma.goal],
             ["habits", "habits", prisma.habit],
             ["aiAnalyses", "aiAnalyses", prisma.aiAnalysis],
+            ["transactions", "transactions", prisma.transaction],
         ];
 
         // If replacing, we need to delete in reverse dependency order
@@ -167,6 +169,7 @@ export async function POST(request: Request) {
             // Delete trades first (depends on accounts), then accounts
             const deleteOrder = [
                 "trades",
+                "transactions",
                 "habits",
                 "goals",
                 "aiAnalyses",

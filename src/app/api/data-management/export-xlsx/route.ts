@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
-        const [trades, accounts, goals, habits, aiAnalyses, users] =
+        const [trades, accounts, goals, habits, aiAnalyses, users, transactions] =
             await Promise.all([
                 prisma.trade.findMany({ orderBy: { createdAt: "desc" } }),
                 prisma.account.findMany({ orderBy: { createdAt: "desc" } }),
@@ -14,6 +14,7 @@ export async function GET() {
                 prisma.habit.findMany({ orderBy: { createdAt: "desc" } }),
                 prisma.aiAnalysis.findMany({ orderBy: { createdAt: "desc" } }),
                 prisma.user.findMany({ orderBy: { createdAt: "desc" } }),
+                prisma.transaction.findMany({ orderBy: { createdAt: "desc" } }),
             ]);
 
         const workbook = XLSX.utils.book_new();
@@ -172,6 +173,35 @@ export async function GET() {
                 workbook,
                 XLSX.utils.aoa_to_sheet([["No AI analysis data"]]),
                 "AI Analyses"
+            );
+        }
+
+        // Transactions sheet
+        if (transactions.length > 0) {
+            const transactionsSheet = XLSX.utils.json_to_sheet(
+                transactions.map((t) => ({
+                    ID: t.id,
+                    Date: t.date,
+                    "Account ID": t.accountId,
+                    Type: t.type,
+                    Amount: t.amount,
+                    Currency: t.currency,
+                    Method: t.method,
+                    Status: t.status,
+                    Notes: t.notes || "",
+                    "Gross Profit": t.grossProfit || "",
+                    "Prop Share": t.propShare || "",
+                    "Trader Share": t.traderShare || "",
+                    "Net Received": t.netReceived || "",
+                    "Created At": t.createdAt?.toISOString() || "",
+                }))
+            );
+            XLSX.utils.book_append_sheet(workbook, transactionsSheet, "Transactions");
+        } else {
+            XLSX.utils.book_append_sheet(
+                workbook,
+                XLSX.utils.aoa_to_sheet([["No transaction data"]]),
+                "Transactions"
             );
         }
 

@@ -59,6 +59,7 @@ model Account {
   updatedAt       DateTime @updatedAt
 
   trades          Trade[]
+  transactions    Transaction[]
 }
 
 model Goal {
@@ -113,4 +114,25 @@ model User {
   role          String    @default("admin")
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+model Transaction {
+  id              String   @id @default(cuid())
+  date            String   // YYYY-MM-DD
+  accountId       String
+  account         Account  @relation(fields: [accountId], references: [id])
+  type            String   // "withdrawal" | "deposit" | "payout"
+  amount          Float
+  currency        String
+  method          String   // "Bank Transfer" | "Wise" | "PayPal" | "Skrill" | "Crypto" | "Other"
+  status          String   // "Pending" | "Approved" | "Completed" | "Rejected"
+  notes           String?
+  screenshots     String?  // JSON stringified array of URLs
+  // Profit Split Fields (only for funded accounts / payouts)
+  grossProfit     Float?
+  propShare       Float?
+  traderShare     Float?
+  netReceived     Float?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }

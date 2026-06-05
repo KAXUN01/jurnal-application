@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 async function getAllData() {
-    const [trades, accounts, goals, habits, aiAnalyses, users] =
+    const [trades, accounts, goals, habits, aiAnalyses, users, transactions] =
         await Promise.all([
             prisma.trade.findMany({ orderBy: { createdAt: "desc" } }),
             prisma.account.findMany({ orderBy: { createdAt: "desc" } }),
@@ -12,9 +12,10 @@ async function getAllData() {
             prisma.habit.findMany({ orderBy: { createdAt: "desc" } }),
             prisma.aiAnalysis.findMany({ orderBy: { createdAt: "desc" } }),
             prisma.user.findMany({ orderBy: { createdAt: "desc" } }),
+            prisma.transaction.findMany({ orderBy: { createdAt: "desc" } }),
         ]);
 
-    return { trades, accounts, goals, habits, aiAnalyses, users };
+    return { trades, accounts, goals, habits, aiAnalyses, users, transactions };
 }
 
 export async function GET() {
@@ -32,6 +33,7 @@ export async function GET() {
                 goals: data.goals,
                 habits: data.habits,
                 aiAnalyses: data.aiAnalyses,
+                transactions: data.transactions,
             },
             metadata: {
                 totalUsers: data.users.length,
@@ -40,13 +42,15 @@ export async function GET() {
                 totalGoals: data.goals.length,
                 totalHabits: data.habits.length,
                 totalAiAnalyses: data.aiAnalyses.length,
+                totalTransactions: data.transactions.length,
                 totalRecords:
                     data.users.length +
                     data.trades.length +
                     data.accounts.length +
                     data.goals.length +
                     data.habits.length +
-                    data.aiAnalyses.length,
+                    data.aiAnalyses.length +
+                    data.transactions.length,
             },
         };
 

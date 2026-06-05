@@ -26,6 +26,7 @@ interface Stats {
     goals: number;
     habits: number;
     aiAnalyses: number;
+    transactions: number;
     users: number;
     totalRecords: number;
     estimatedSizeFormatted: string;
@@ -45,6 +46,7 @@ interface ValidationResult {
     goalsFound: number;
     habitsFound: number;
     aiAnalysesFound: number;
+    transactionsFound: number;
     usersFound: number;
     totalRecords: number;
     issues: ValidationIssue[];
@@ -81,6 +83,7 @@ export default function DataManagementPage() {
         "goals",
         "habits",
         "aiAnalyses",
+        "transactions",
     ]);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -216,7 +219,7 @@ export default function DataManagementPage() {
     };
 
     const toggleAllModules = () => {
-        if (selectedModules.length === 6) {
+        if (selectedModules.length === 7) {
             setSelectedModules([]);
         } else {
             setSelectedModules([
@@ -226,6 +229,7 @@ export default function DataManagementPage() {
                 "goals",
                 "habits",
                 "aiAnalyses",
+                "transactions",
             ]);
         }
     };
@@ -521,6 +525,10 @@ export default function DataManagementPage() {
                                                 <p className="text-xs text-gray-400 uppercase">Goals Found</p>
                                                 <p className="text-xl font-mono text-white">{validationResult.goalsFound}</p>
                                             </div>
+                                            <div className="bg-surface-800/50 p-3 rounded-lg border border-surface-600/50">
+                                                <p className="text-xs text-gray-400 uppercase">Withdrawals Found</p>
+                                                <p className="text-xl font-mono text-white">{validationResult.transactionsFound}</p>
+                                            </div>
                                         </div>
 
                                         {validationResult.issues.length > 0 && (
@@ -643,7 +651,7 @@ export default function DataManagementPage() {
                                     onClick={toggleAllModules}
                                     className="text-xs text-neon-blue hover:text-white transition-colors"
                                 >
-                                    {selectedModules.length === 6 ? "Deselect All" : "Select All"}
+                                    {selectedModules.length === 7 ? "Deselect All" : "Select All"}
                                 </button>
                             </div>
                             
@@ -654,6 +662,7 @@ export default function DataManagementPage() {
                                     { id: "goals", label: "Goals" },
                                     { id: "habits", label: "Habits" },
                                     { id: "aiAnalyses", label: "AI Analysis" },
+                                    { id: "transactions", label: "Withdrawals" },
                                     { id: "users", label: "Users/Settings" }
                                 ].map((mod) => (
                                     <label key={mod.id} className="flex items-center gap-2 p-2 bg-surface-800/50 rounded border border-surface-600/30 cursor-pointer hover:bg-surface-700/50">

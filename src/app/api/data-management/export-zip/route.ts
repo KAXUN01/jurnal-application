@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
     try {
-        const [trades, accounts, goals, habits, aiAnalyses, users] =
+        const [trades, accounts, goals, habits, aiAnalyses, users, transactions] =
             await Promise.all([
                 prisma.trade.findMany({ orderBy: { createdAt: "desc" } }),
                 prisma.account.findMany({ orderBy: { createdAt: "desc" } }),
@@ -14,6 +14,7 @@ export async function GET() {
                 prisma.habit.findMany({ orderBy: { createdAt: "desc" } }),
                 prisma.aiAnalysis.findMany({ orderBy: { createdAt: "desc" } }),
                 prisma.user.findMany({ orderBy: { createdAt: "desc" } }),
+                prisma.transaction.findMany({ orderBy: { createdAt: "desc" } }),
             ]);
 
         const exportedAt = new Date().toISOString();
@@ -29,6 +30,7 @@ export async function GET() {
                 goals,
                 habits,
                 aiAnalyses,
+                transactions,
             },
             metadata: {
                 totalUsers: users.length,
@@ -37,13 +39,15 @@ export async function GET() {
                 totalGoals: goals.length,
                 totalHabits: habits.length,
                 totalAiAnalyses: aiAnalyses.length,
+                totalTransactions: transactions.length,
                 totalRecords:
                     users.length +
                     trades.length +
                     accounts.length +
                     goals.length +
                     habits.length +
-                    aiAnalyses.length,
+                    aiAnalyses.length +
+                    transactions.length,
             },
         };
 

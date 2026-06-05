@@ -15,6 +15,7 @@ interface BackupData {
         goals?: unknown[];
         habits?: unknown[];
         aiAnalyses?: unknown[];
+        transactions?: unknown[];
     };
     metadata?: Record<string, unknown>;
 }
@@ -39,6 +40,7 @@ function validateBackupStructure(data: BackupData): {
         goals: 0,
         habits: 0,
         aiAnalyses: 0,
+        transactions: 0,
     };
 
     // Check version
@@ -61,7 +63,7 @@ function validateBackupStructure(data: BackupData): {
     }
 
     // Count records and validate structure for each module
-    const modules = ["users", "trades", "accounts", "goals", "habits", "aiAnalyses"] as const;
+    const modules = ["users", "trades", "accounts", "goals", "habits", "aiAnalyses", "transactions"] as const;
     for (const mod of modules) {
         const arr = data.data[mod];
         if (Array.isArray(arr)) {
@@ -290,6 +292,7 @@ export async function POST(request: Request) {
             goalsFound: validation.counts.goals,
             habitsFound: validation.counts.habits,
             aiAnalysesFound: validation.counts.aiAnalyses,
+            transactionsFound: validation.counts.transactions,
             usersFound: validation.counts.users,
             totalRecords: Object.values(validation.counts).reduce(
                 (a, b) => a + b,
