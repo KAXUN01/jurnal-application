@@ -29,25 +29,26 @@ if (process.env.NODE_ENV !== "production") {
           "id" TEXT NOT NULL PRIMARY KEY,
           "pair" TEXT NOT NULL,
           "tradeType" TEXT NOT NULL,
+          "tradeDirection" TEXT NOT NULL,
           "date" TEXT NOT NULL,
           "time" TEXT NOT NULL,
-          "bias1H" TEXT NOT NULL,
-          "rangeType" TEXT NOT NULL,
-          "poiType" TEXT NOT NULL,
           "entryPrice" TEXT NOT NULL,
           "stopLoss" TEXT NOT NULL,
           "takeProfit" TEXT NOT NULL,
+          "exitPrice" TEXT NOT NULL,
           "rrRatio" REAL NOT NULL,
           "lotSize" TEXT NOT NULL,
-          "entryType" TEXT NOT NULL,
-          "poiTapped" BOOLEAN,
-          "chochConfirmed" BOOLEAN,
+          "tradeDuration" TEXT NOT NULL,
           "outcome" TEXT NOT NULL,
           "profitLoss" TEXT NOT NULL,
-          "emotion" TEXT NOT NULL,
-          "followedRules" BOOLEAN,
-          "mistakes" TEXT NOT NULL,
+          "profitLossPercent" TEXT NOT NULL,
+          "beforeTrade" TEXT NOT NULL,
+          "duringTrade" TEXT NOT NULL,
+          "afterTrade" TEXT NOT NULL,
+          "beforeScreenshot" TEXT,
+          "afterScreenshot" TEXT,
           "screenshots" TEXT,
+          "tags" TEXT,
           "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
           "updatedAt" DATETIME NOT NULL
       );
@@ -72,17 +73,34 @@ if (process.env.NODE_ENV !== "production") {
             console.error("failed to create Account table:", e);
         });
 
-    // Add accountId column to Trade if missing
+    // Add missing columns to Trade if they are not present
     (async () => {
         try {
-            const cols: any = await prisma.$queryRaw`PRAGMA table_info('Trade')`;
-            const hasAccount = cols && Array.isArray(cols) && cols.find((c: any) => c.name === 'accountId');
-            if (!hasAccount) {
+            const cols = (await prisma.$queryRaw`PRAGMA table_info('Trade')`) as Array<{ name: string }>;
+            const columnNames = Array.isArray(cols) ? cols.map((c) => c.name) : [];
+            const ensureColumn = async (name: string, definition: string) => {
+                if (!columnNames.includes(name)) {
+                    await prisma.$executeRawUnsafe(`ALTER TABLE "Trade" ADD COLUMN "${name}" ${definition}`);
+                }
+            };
+
+            if (!columnNames.includes('accountId')) {
                 await prisma.$executeRaw`ALTER TABLE "Trade" ADD COLUMN "accountId" TEXT`;
             }
+            await ensureColumn('tradeDirection', "TEXT NOT NULL DEFAULT ''");
+            await ensureColumn('exitPrice', "TEXT NOT NULL DEFAULT ''");
+            await ensureColumn('tradeDuration', "TEXT NOT NULL DEFAULT ''");
+            await ensureColumn('profitLossPercent', "TEXT NOT NULL DEFAULT ''");
+            await ensureColumn('beforeTrade', "TEXT NOT NULL DEFAULT ''");
+            await ensureColumn('duringTrade', "TEXT NOT NULL DEFAULT ''");
+            await ensureColumn('afterTrade', "TEXT NOT NULL DEFAULT ''");
+            await ensureColumn('beforeScreenshot', 'TEXT');
+            await ensureColumn('afterScreenshot', 'TEXT');
+            await ensureColumn('screenshots', 'TEXT');
+            await ensureColumn('tags', 'TEXT');
         } catch (e) {
             // If alter fails, log but don't crash dev server
-            console.error('failed to ensure accountId column on Trade:', e);
+            console.error('failed to ensure Trade columns:', e);
         }
     })();
 }

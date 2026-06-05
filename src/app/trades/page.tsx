@@ -29,26 +29,38 @@ interface TradeEntry {
     id: string;
     pair: string;
     tradeType: string;
+    tradeDirection?: string;
     date: string;
     time?: string;
-    bias1H: string;
-    rangeType: string;
-    poiType: string;
     entryPrice: string;
     stopLoss: string;
     takeProfit: string;
+    exitPrice?: string;
     rrRatio: number;
-    entryType: string;
-    poiTapped: boolean | null;
-    chochConfirmed: boolean | null;
+    lotSize?: string;
+    tradeDuration?: string;
     outcome: string;
     profitLoss: string;
-    emotion: string;
-    followedRules: boolean | null;
-    mistakes: string;
+    profitLossPercent?: string;
+    beforeTrade?: string;
+    duringTrade?: string;
+    afterTrade?: string;
+    beforeScreenshot?: string;
+    afterScreenshot?: string;
+    screenshots?: string;
+    tags?: string;
     accountId?: string;
     accountType?: string;
     // Legacy fields from old trade format
+    bias1H?: string;
+    rangeType?: string;
+    poiType?: string;
+    entryType?: string;
+    poiTapped?: boolean | null;
+    chochConfirmed?: boolean | null;
+    emotion?: string;
+    followedRules?: boolean | null;
+    mistakes?: string;
     symbol?: string;
     side?: string;
     entry?: number;
@@ -89,104 +101,99 @@ function StatBox({
     );
 }
 
-// ─── Expanded Detail Row ─────────────────────────────────────────────
 function TradeDetail({ trade }: { trade: TradeEntry }) {
     return (
         <div className="px-4 py-4 bg-surface-900/50 border-t border-surface-500/10 animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {/* Checklist / Entry Validation */}
+                {/* Position Details */}
                 <div className="space-y-3">
                     <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <ListChecks className="h-3.5 w-3.5 text-neon-blue" />
-                        Entry Validation
+                        <Crosshair className="h-3.5 w-3.5 text-neon-blue" />
+                        Position Details
                     </h4>
                     <div className="space-y-2">
-                        <DetailRow
-                            label="1H Bias"
-                            value={trade.bias1H || "—"}
-                            type="text"
-                        />
-                        <DetailRow
-                            label="Range Type"
-                            value={trade.rangeType || "—"}
-                            type="text"
-                        />
-                        <DetailRow
-                            label="POI Type"
-                            value={trade.poiType || "—"}
-                            type="text"
-                        />
-                        <DetailRow
-                            label="Entry Type"
-                            value={trade.entryType || "—"}
-                            type="text"
-                        />
+                        <DetailRow label="Direction" value={trade.tradeDirection || "—"} type="text" />
+                        <DetailRow label="Entry Price" value={trade.entryPrice || "—"} type="text" />
+                        <DetailRow label="Stop Loss" value={trade.stopLoss || "—"} type="text" />
+                        <DetailRow label="Take Profit" value={trade.takeProfit || "—"} type="text" />
+                        <DetailRow label="Exit Price" value={trade.exitPrice || "—"} type="text" />
+                        <DetailRow label="Lot Size" value={trade.lotSize || "—"} type="text" />
+                        <DetailRow label="Duration" value={trade.tradeDuration || "—"} type="text" />
+                        {trade.time && <DetailRow label="Time" value={trade.time} type="text" />}
+                        {trade.entryExecutionTime && <DetailRow label="Execution Time" value={trade.entryExecutionTime} type="text" />}
                     </div>
                 </div>
 
-                {/* Execution Confirmation */}
+                {/* Trade Result */}
                 <div className="space-y-3">
                     <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
-                        <Crosshair className="h-3.5 w-3.5 text-neon-green" />
-                        Execution Confirmation
+                        <Target className="h-3.5 w-3.5 text-neon-green" />
+                        Trade Result
                     </h4>
                     <div className="space-y-2">
-                        <DetailRow
-                            label="POI Tapped"
-                            value={trade.poiTapped}
-                            type="bool"
-                        />
-                        <DetailRow
-                            label="3min ChoCH"
-                            value={trade.chochConfirmed}
-                            type="bool"
-                        />
-                        <DetailRow
-                            label="Entry"
-                            value={trade.entryPrice || "—"}
-                            type="text"
-                        />
-                        <DetailRow
-                            label="SL"
-                            value={trade.stopLoss || "—"}
-                            type="text"
-                        />
-                        <DetailRow
-                            label="TP"
-                            value={trade.takeProfit || "—"}
-                            type="text"
-                        />
+                        <DetailRow label="Outcome" value={trade.outcome || "—"} type="outcome" />
+                        <DetailRow label="Profit / Loss" value={trade.profitLoss || "0"} type="pnl" />
+                        <DetailRow label="P/L %" value={trade.profitLossPercent || "—"} type="text" />
+                        <DetailRow label="R:R Ratio" value={trade.rrRatio > 0 ? `${trade.rrRatio}R` : "—"} type="text" />
                     </div>
+                    {/* Tags */}
+                    {trade.tags && (() => {
+                        try {
+                            const tags = typeof trade.tags === "string" ? JSON.parse(trade.tags) : trade.tags;
+                            if (Array.isArray(tags) && tags.length > 0) {
+                                return (
+                                    <div className="mt-3">
+                                        <span className="text-[10px] uppercase tracking-widest text-gray-500 font-mono block mb-1.5">Tags</span>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {tags.map((tag: string, i: number) => (
+                                                <span key={i} className="text-[10px] px-2 py-0.5 rounded-full bg-neon-blue/10 text-neon-blue border border-neon-blue/20">
+                                                    {tag}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            }
+                        } catch { /* ignore parse errors */ }
+                        return null;
+                    })()}
                 </div>
 
-                {/* Psychology */}
+                {/* Psychology Journal */}
                 <div className="space-y-3">
                     <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
                         <Brain className="h-3.5 w-3.5 text-neon-red" />
-                        Psychology
+                        Psychology Journal
                     </h4>
-                    <div className="space-y-2">
-                        <DetailRow
-                            label="Emotion"
-                            value={trade.emotion || "—"}
-                            type="emotion"
-                        />
-                        <DetailRow
-                            label="Followed Rules"
-                            value={trade.followedRules}
-                            type="bool"
-                        />
+                    <div className="space-y-3">
+                        {trade.beforeTrade && (
+                            <div>
+                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-mono block mb-1">Before Trade</span>
+                                <p className="text-xs text-gray-400 bg-surface-800/60 rounded-lg px-3 py-2 border border-surface-500/15 leading-relaxed">
+                                    {trade.beforeTrade}
+                                </p>
+                            </div>
+                        )}
+                        {trade.duringTrade && (
+                            <div>
+                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-mono block mb-1">During Trade</span>
+                                <p className="text-xs text-gray-400 bg-surface-800/60 rounded-lg px-3 py-2 border border-surface-500/15 leading-relaxed">
+                                    {trade.duringTrade}
+                                </p>
+                            </div>
+                        )}
+                        {trade.afterTrade && (
+                            <div>
+                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-mono block mb-1">After Trade</span>
+                                <p className="text-xs text-gray-400 bg-surface-800/60 rounded-lg px-3 py-2 border border-surface-500/15 leading-relaxed">
+                                    {trade.afterTrade}
+                                </p>
+                            </div>
+                        )}
+                        {!trade.beforeTrade && !trade.duringTrade && !trade.afterTrade && (
+                            <p className="text-xs text-gray-600 italic">No psychology notes recorded</p>
+                        )}
                     </div>
-                    {trade.mistakes && (
-                        <div className="mt-2">
-                            <span className="text-[10px] uppercase tracking-widest text-gray-500 font-mono block mb-1">
-                                Mistakes / Notes
-                            </span>
-                            <p className="text-xs text-gray-400 bg-surface-800/60 rounded-lg px-3 py-2 border border-surface-500/15 leading-relaxed">
-                                {trade.mistakes}
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
         </div>
@@ -200,7 +207,7 @@ function DetailRow({
 }: {
     label: string;
     value: string | boolean | null;
-    type: "text" | "bool" | "emotion";
+    type: "text" | "bool" | "emotion" | "outcome" | "pnl";
 }) {
     return (
         <div className="flex items-center justify-between text-xs">
@@ -217,6 +224,30 @@ function DetailRow({
                 ) : (
                     <span className="text-gray-600">—</span>
                 )
+            ) : type === "outcome" ? (
+                <span
+                    className={`font-semibold ${String(value) === "Win"
+                        ? "text-emerald-400"
+                        : String(value) === "Loss"
+                            ? "text-red-400"
+                            : String(value) === "Breakeven"
+                                ? "text-yellow-400"
+                                : "text-gray-400"
+                    }`}
+                >
+                    {String(value)}
+                </span>
+            ) : type === "pnl" ? (
+                <span
+                    className={`font-bold font-mono ${parseFloat(String(value)) > 0
+                        ? "text-emerald-400"
+                        : parseFloat(String(value)) < 0
+                            ? "text-red-400"
+                            : "text-gray-400"
+                    }`}
+                >
+                    {parseFloat(String(value)) > 0 ? "+" : ""}{String(value)}
+                </span>
             ) : type === "emotion" ? (
                 <span
                     className={`font-medium ${value === "Calm"
@@ -331,9 +362,18 @@ export default function TradesPage() {
                     ...t,
                     pair: t.pair || "—",
                     tradeType: t.tradeType || "—",
+                    tradeDirection: t.tradeDirection || "—",
                     outcome: t.outcome || "—",
                     rrRatio: t.rrRatio || 0,
                     profitLoss: t.profitLoss || "0",
+                    profitLossPercent: t.profitLossPercent || "",
+                    beforeTrade: t.beforeTrade || "",
+                    duringTrade: t.duringTrade || "",
+                    afterTrade: t.afterTrade || "",
+                    beforeScreenshot: t.beforeScreenshot || "",
+                    afterScreenshot: t.afterScreenshot || "",
+                    screenshots: t.screenshots || "",
+                    tags: t.tags || "",
                     followedRules: t.followedRules ?? null,
                     emotion: t.emotion || "—",
                     bias1H: t.bias1H || "—",
@@ -367,7 +407,7 @@ export default function TradesPage() {
                 if (!res.ok) return;
                 const ac = await res.json();
                 setAccounts(ac || []);
-            } catch (e) {
+            } catch {
                 // ignore
             }
         })();

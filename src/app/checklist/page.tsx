@@ -56,7 +56,7 @@ const createSections = (): Section[] => [
         color: "cyan",
         items: [
             { id: "mc-1", label: "1H market structure (mBOS) identified", checked: null },
-            { id: "mc-2", label: "Valid trading range identified (LSL / MIT / IDM / mChoCH)", checked: null },
+            { id: "mc-2", label: "Valid MNSR trading range identified (LSL / MIT / IDM / mChoCH)", checked: null },
         ],
     },
     {
@@ -71,34 +71,34 @@ const createSections = (): Section[] => [
     },
     {
         id: "poi-validation",
-        title: "POI Validation",
+        title: "MNSR POI Validation",
         icon: Target,
         color: "yellow",
         items: [
-            { id: "pv-1", label: "Valid 15min POI identified", checked: null },
-            { id: "pv-2", label: "POI has imbalance OR refined to valid LTF POI", checked: null },
-            { id: "pv-3", label: "POI has broken structure", checked: null },
+            { id: "pv-1", label: "Valid 15min POI identified for MNSR entry", checked: null },
+            { id: "pv-2", label: "POI has imbalance or refined to valid LTF MNSR POI", checked: null },
+            { id: "pv-3", label: "POI has broken structure ready for MNSR entry", checked: null },
         ],
     },
     {
         id: "poi-tap",
-        title: "POI Tap Confirmation",
+        title: "MNSR POI Tap Confirmation",
         icon: Crosshair,
         color: "green",
         items: [
-            { id: "pt-1", label: "POI tapped properly", checked: null },
+            { id: "pt-1", label: "POI tapped properly for MNSR entry", checked: null },
             { id: "pt-2", label: "Not just internal liquidity tap", checked: null },
         ],
     },
     {
         id: "entry-confirmation",
-        title: "Entry Confirmation",
+        title: "MNSR Entry Confirmation",
         icon: Zap,
         color: "green",
         items: [
-            { id: "ec-1", label: "3min ChoCH confirmed", checked: null },
-            { id: "ec-2", label: "Entry model valid", checked: null },
-            { id: "ec-3", label: "Clean structure (no messy confirmation)", checked: null },
+            { id: "ec-1", label: "MNSR entry trigger confirmed", checked: null },
+            { id: "ec-2", label: "MNSR entry model valid", checked: null },
+            { id: "ec-3", label: "Clean MNSR structure (no messy confirmation)", checked: null },
         ],
     },
     {
@@ -335,7 +335,7 @@ export default function ChecklistPage() {
                         Trade Execution Checklist
                     </h1>
                     <p className="text-sm text-gray-500 mt-2 ml-12">
-                        SOP-based validation — Complete all checks before entering a trade
+                        MNSR entry validation — Complete all checks before taking an MNSR entry
                     </p>
                 </div>
                 <Button variant="ghost" size="sm" onClick={resetAll}>

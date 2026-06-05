@@ -5,31 +5,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
-import { X, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { X, Save, ArrowRight } from "lucide-react";
 
 interface TradeEntry {
     id: string;
     pair: string;
     tradeType: string;
+    tradeDirection?: string;
     date: string;
-    time: string;
-    bias1H: string;
-    rangeType: string;
-    poiType: string;
+    time?: string;
     entryPrice: string;
     stopLoss: string;
     takeProfit: string;
+    exitPrice?: string;
     rrRatio: number;
-    lotSize: string;
-    entryType: string;
-    poiTapped: boolean | null;
-    chochConfirmed: boolean | null;
+    lotSize?: string;
+    tradeDuration?: string;
     outcome: string;
     profitLoss: string;
-    emotion: string;
-    followedRules: boolean | null;
-    mistakes: string;
-    screenshots: string;
+    profitLossPercent?: string;
+    beforeTrade?: string;
+    duringTrade?: string;
+    afterTrade?: string;
+    beforeScreenshot?: string;
+    afterScreenshot?: string;
+    screenshots?: string;
+    tags?: string;
+    accountId?: string;
 }
 
 interface EditTradeModalProps {
@@ -37,43 +39,6 @@ interface EditTradeModalProps {
     isOpen: boolean;
     onClose: () => void;
     onSave: (trade: TradeEntry) => Promise<void>;
-}
-
-function ToggleButton({
-    value,
-    onChange,
-}: {
-    value: boolean | null;
-    onChange: (val: boolean) => void;
-}) {
-    return (
-        <div className="flex items-center gap-1">
-            <button
-                type="button"
-                onClick={() => onChange(true)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${
-                    value === true
-                        ? "bg-neon-green/15 text-neon-green border-neon-green/30 shadow-[0_0_12px_rgba(0,255,136,0.15)]"
-                        : "bg-transparent text-gray-600 border-surface-500/30 hover:text-gray-400 hover:border-surface-500/60"
-                }`}
-            >
-                <CheckCircle2 className="h-3 w-3" />
-                YES
-            </button>
-            <button
-                type="button"
-                onClick={() => onChange(false)}
-                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 border ${
-                    value === false
-                        ? "bg-neon-red/15 text-neon-red border-neon-red/30 shadow-[0_0_12px_rgba(255,59,92,0.15)]"
-                        : "bg-transparent text-gray-600 border-surface-500/30 hover:text-gray-400 hover:border-surface-500/60"
-                }`}
-            >
-                X
-                NO
-            </button>
-        </div>
-    );
 }
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
@@ -84,50 +49,56 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
     );
 }
 
-export default function EditTradeModal({
-    trade,
-    isOpen,
-    onClose,
-    onSave,
-}: EditTradeModalProps) {
+const parseJsonArray = (value: string | undefined) => {
+    if (!value) return [] as string[];
+    try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [] as string[];
+    }
+};
+
+export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditTradeModalProps) {
     const [form, setForm] = useState<TradeEntry | null>(trade);
     const [isSaving, setIsSaving] = useState(false);
+    const [screenshotUrl, setScreenshotUrl] = useState("");
+    const [tagInput, setTagInput] = useState("");
 
-    // Update form when trade prop changes
     if (trade && form?.id !== trade.id) {
         setForm(trade);
     }
 
+    const formScreenshots = form?.screenshots;
+    const formTags = form?.tags;
+
+    const screenshots = useMemo(() => parseJsonArray(formScreenshots), [formScreenshots]);
+    const tags = useMemo(() => parseJsonArray(formTags), [formTags]);
+
+    const editEntryPrice = form?.entryPrice ?? "";
+    const editStopLoss = form?.stopLoss ?? "";
+    const editTakeProfit = form?.takeProfit ?? "";
+
     const rrRatio = useMemo(() => {
-        if (!form) return null;
-        const entry = parseFloat(form.entryPrice);
-        const sl = parseFloat(form.stopLoss);
-        const tp = parseFloat(form.takeProfit);
+        const entry = parseFloat(editEntryPrice);
+        const sl = parseFloat(editStopLoss);
+        const tp = parseFloat(editTakeProfit);
         if (isNaN(entry) || isNaN(sl) || isNaN(tp) || entry === sl) return null;
         const risk = Math.abs(entry - sl);
         const reward = Math.abs(tp - entry);
         if (risk === 0) return null;
         return parseFloat((reward / risk).toFixed(2));
-    }, [form?.entryPrice, form?.stopLoss, form?.takeProfit]);
+    }, [editEntryPrice, editStopLoss, editTakeProfit]);
 
     const handleSave = async () => {
         if (!form) return;
         setIsSaving(true);
         try {
-            // Parse screenshots if it's a string
-            let screenshots = [];
-            if (typeof form.screenshots === "string") {
-                try {
-                    screenshots = JSON.parse(form.screenshots);
-                } catch {
-                    screenshots = [];
-                }
-            }
-
             await onSave({
                 ...form,
                 rrRatio: rrRatio ?? form.rrRatio,
                 screenshots: JSON.stringify(screenshots),
+                tags: JSON.stringify(tags),
             });
             onClose();
         } finally {
@@ -135,254 +106,242 @@ export default function EditTradeModal({
         }
     };
 
-    if (!isOpen || !form) return null;
+    const set = (key: string, value: string | number | null) =>
+        setForm((prev) => (prev ? { ...prev, [key]: value } : null));
 
-    const set = (key: string, value: string | boolean | null | number) =>
-        setForm((p) => (p ? { ...p, [key]: value } : null));
+    if (!isOpen || !form) return null;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
-            <div className="max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="max-w-4xl w-full max-h-[90vh] overflow-y-auto">
                 <Card className="border-neon-blue/20">
                     <CardHeader>
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="flex items-center gap-3">
+                        <div className="flex items-center justify-between gap-3">
+                            <CardTitle className="flex flex-col gap-1">
                                 <span>Edit Trade</span>
-                                <span className="text-xs text-gray-600 font-mono">
+                                <span className="text-xs text-gray-500 font-mono">
                                     {form.pair} • {form.date}
                                 </span>
                             </CardTitle>
                             <button
                                 onClick={onClose}
-                                className="p-2 hover:bg-surface-700 rounded-lg transition-colors"
+                                className="p-2 rounded-lg hover:bg-surface-700 transition-colors"
                             >
                                 <X className="h-4 w-4 text-gray-400" />
                             </button>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {/* Section 1: Entry Info */}
-                        <div>
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-                                Entry Information
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div>
-                                    <FieldLabel>Pair</FieldLabel>
-                                    <Select
-                                        value={form.pair}
-                                        onChange={(e) =>
-                                            set("pair", e.target.value)
-                                        }
-                                    >
-                                        <option value="">Select pair...</option>
-                                        <option value="EU">
-                                            EU (EUR/USD)
-                                        </option>
-                                        <option value="GU">
-                                            GU (GBP/USD)
-                                        </option>
-                                        <option value="UJ">
-                                            UJ (USD/JPY)
-                                        </option>
-                                        <option value="UF">
-                                            UF (USD/CHF)
-                                        </option>
-                                        <option value="UCAD">
-                                            UCAD (USD/CAD)
-                                        </option>
-                                        <option value="AU">
-                                            AU (AUD/USD)
-                                        </option>
-                                        <option value="US30">
-                                            US30 (Dow Jones)
-                                        </option>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <FieldLabel>Trade Type</FieldLabel>
-                                    <Select
-                                        value={form.tradeType}
-                                        onChange={(e) =>
-                                            set("tradeType", e.target.value)
-                                        }
-                                    >
-                                        <option value="">
-                                            Select type...
-                                        </option>
-                                        <option value="15min PT">
-                                            15min PT (Pro Trend)
-                                        </option>
-                                        <option value="CT">CT (Counter Trend)</option>
-                                        <option value="ECT">
-                                            ECT (Extreme CT)
-                                        </option>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <FieldLabel>Date</FieldLabel>
-                                    <Input
-                                        type="date"
-                                        value={form.date}
-                                        onChange={(e) =>
-                                            set("date", e.target.value)
-                                        }
-                                    />
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <FieldLabel>Pair</FieldLabel>
+                                <Select value={form.pair} onChange={(e) => set("pair", e.target.value)}>
+                                    <option value="">Select pair...</option>
+                                    <option value="EURUSD">EURUSD</option>
+                                    <option value="GBPUSD">GBPUSD</option>
+                                    <option value="USDJPY">USDJPY</option>
+                                    <option value="XAUUSD">XAUUSD</option>
+                                    <option value="BTCUSD">BTCUSD</option>
+                                </Select>
+                            </div>
+                            <div>
+                                <FieldLabel>Direction</FieldLabel>
+                                <Select value={form.tradeDirection || ""} onChange={(e) => set("tradeDirection", e.target.value)}>
+                                    <option value="">Select...</option>
+                                    <option value="Long">Long</option>
+                                    <option value="Short">Short</option>
+                                </Select>
+                            </div>
+                            <div>
+                                <FieldLabel>Trade Type</FieldLabel>
+                                <Select value={form.tradeType} onChange={(e) => set("tradeType", e.target.value)}>
+                                    <option value="">Select type...</option>
+                                    <option value="MSNR">MSNR</option>
+                                    <option value="Price Action">Price Action</option>
+                                    <option value="Supply Demand">Supply Demand</option>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <FieldLabel>Date</FieldLabel>
+                                <Input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} />
+                            </div>
+                            <div>
+                                <FieldLabel>Time</FieldLabel>
+                                <Input type="time" value={form.time || ""} onChange={(e) => set("time", e.target.value)} />
+                            </div>
+                            <div>
+                                <FieldLabel>Outcome</FieldLabel>
+                                <Select value={form.outcome} onChange={(e) => set("outcome", e.target.value)}>
+                                    <option value="">Select outcome...</option>
+                                    <option value="Win">Win</option>
+                                    <option value="Loss">Loss</option>
+                                    <option value="BE">Break Even</option>
+                                </Select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div>
+                                <FieldLabel>Entry Price</FieldLabel>
+                                <Input value={form.entryPrice} onChange={(e) => set("entryPrice", e.target.value)} placeholder="0.00000" />
+                            </div>
+                            <div>
+                                <FieldLabel>Stop Loss</FieldLabel>
+                                <Input value={form.stopLoss} onChange={(e) => set("stopLoss", e.target.value)} placeholder="0.00000" />
+                            </div>
+                            <div>
+                                <FieldLabel>Take Profit</FieldLabel>
+                                <Input value={form.takeProfit} onChange={(e) => set("takeProfit", e.target.value)} placeholder="0.00000" />
+                            </div>
+                            <div>
+                                <FieldLabel>Exit Price</FieldLabel>
+                                <Input value={form.exitPrice || ""} onChange={(e) => set("exitPrice", e.target.value)} placeholder="0.00000" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <FieldLabel>Lot Size</FieldLabel>
+                                <Input value={form.lotSize || ""} onChange={(e) => set("lotSize", e.target.value)} placeholder="0.00" />
+                            </div>
+                            <div>
+                                <FieldLabel>Duration</FieldLabel>
+                                <Input value={form.tradeDuration || ""} onChange={(e) => set("tradeDuration", e.target.value)} placeholder="e.g. 2h 15m" />
+                            </div>
+                            <div>
+                                <FieldLabel>Profit / Loss %</FieldLabel>
+                                <Input value={form.profitLossPercent || ""} onChange={(e) => set("profitLossPercent", e.target.value)} placeholder="0.00%" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <FieldLabel>Profit / Loss</FieldLabel>
+                                <Input value={form.profitLoss} onChange={(e) => set("profitLoss", e.target.value)} placeholder="0.00" />
+                            </div>
+                            <div className="flex h-full items-end">
+                                <div className="w-full rounded-xl border border-surface-500/20 bg-surface-900/50 px-4 py-3">
+                                    <div className="text-xs text-gray-400 uppercase tracking-wider">RR Ratio</div>
+                                    <div className="mt-2 text-lg font-bold text-white">{rrRatio !== null ? `${rrRatio}R` : "—"}</div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Section 2: Price Levels */}
-                        <div>
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-                                Price Levels
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                                <div>
-                                    <FieldLabel>Entry Price</FieldLabel>
-                                    <Input
-                                        type="text"
-                                        value={form.entryPrice}
-                                        onChange={(e) =>
-                                            set("entryPrice", e.target.value)
-                                        }
-                                        placeholder="1.0850"
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>Stop Loss</FieldLabel>
-                                    <Input
-                                        type="text"
-                                        value={form.stopLoss}
-                                        onChange={(e) =>
-                                            set("stopLoss", e.target.value)
-                                        }
-                                        placeholder="1.0840"
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>Take Profit</FieldLabel>
-                                    <Input
-                                        type="text"
-                                        value={form.takeProfit}
-                                        onChange={(e) =>
-                                            set("takeProfit", e.target.value)
-                                        }
-                                        placeholder="1.0870"
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>RR Ratio</FieldLabel>
-                                    <Input
-                                        type="text"
-                                        value={
-                                            rrRatio !== null ? `${rrRatio}R` : ""
-                                        }
-                                        readOnly
-                                        className="bg-surface-800 opacity-60"
-                                    />
-                                </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <FieldLabel>Before Trade</FieldLabel>
+                                <Textarea value={form.beforeTrade || ""} onChange={(e) => set("beforeTrade", e.target.value)} placeholder="Why did I enter?" className="min-h-[110px]" />
+                            </div>
+                            <div>
+                                <FieldLabel>During Trade</FieldLabel>
+                                <Textarea value={form.duringTrade || ""} onChange={(e) => set("duringTrade", e.target.value)} placeholder="What was I feeling?" className="min-h-[110px]" />
                             </div>
                         </div>
 
-                        {/* Section 3: Trade Outcome */}
                         <div>
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-                                Trade Outcome
-                            </h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div>
-                                    <FieldLabel>Outcome</FieldLabel>
-                                    <Select
-                                        value={form.outcome}
-                                        onChange={(e) =>
-                                            set("outcome", e.target.value)
-                                        }
+                            <FieldLabel>After Trade</FieldLabel>
+                            <Textarea value={form.afterTrade || ""} onChange={(e) => set("afterTrade", e.target.value)} placeholder="Lessons learned" className="min-h-[110px]" />
+                        </div>
+
+                        {/* Before/After Screenshot URL inputs removed per request */}
+
+                        <div>
+                            <FieldLabel>Add Screenshot URL</FieldLabel>
+                            <div className="flex gap-2">
+                                <Input value={screenshotUrl} onChange={(e) => setScreenshotUrl(e.target.value)} placeholder="Paste screenshot URL" />
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        const url = screenshotUrl.trim();
+                                        if (!url) return;
+                                        const next = [...screenshots, url];
+                                        set("screenshots", JSON.stringify(next));
+                                        setScreenshotUrl("");
+                                    }}
+                                    className="rounded-xl bg-neon-green/10 text-neon-green px-4 py-2"
+                                >
+                                    Add
+                                </button>
+                            </div>
+                        </div>
+
+                        {screenshots.length > 0 && (
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                                {screenshots.map((src, idx) => (
+                                    <div key={idx} className="group relative rounded-lg overflow-hidden border border-surface-500/20">
+                                        <img src={src} alt={`Screenshot ${idx + 1}`} className="w-full h-24 object-cover" />
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const next = screenshots.filter((_, i) => i !== idx);
+                                                set("screenshots", JSON.stringify(next));
+                                            }}
+                                            className="absolute top-2 right-2 rounded-full bg-black/50 p-1 text-white"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+                            <div className="sm:col-span-2">
+                                <FieldLabel>Tags</FieldLabel>
+                                <Input value={tagInput} onChange={(e) => setTagInput(e.target.value)} placeholder="Add custom tag" />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const tag = tagInput.trim();
+                                    if (!tag) return;
+                                    const next = Array.from(new Set([...tags, tag]));
+                                    set("tags", JSON.stringify(next));
+                                    setTagInput("");
+                                }}
+                                className="rounded-xl bg-neon-green/10 text-neon-green px-4 py-2"
+                            >
+                                Add Tag
+                            </button>
+                        </div>
+
+                        {tags.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                                {tags.map((tag, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => {
+                                            const next = tags.filter((_, i) => i !== idx);
+                                            set("tags", JSON.stringify(next));
+                                        }}
+                                        className="rounded-full border border-surface-500/30 px-3 py-2 text-xs text-gray-300"
                                     >
-                                        <option value="">Select outcome...</option>
-                                        <option value="Win">Win</option>
-                                        <option value="Loss">Loss</option>
-                                        <option value="BE">Break Even</option>
-                                    </Select>
-                                </div>
-                                <div>
-                                    <FieldLabel>P&L</FieldLabel>
-                                    <Input
-                                        type="text"
-                                        value={form.profitLoss}
-                                        onChange={(e) =>
-                                            set("profitLoss", e.target.value)
-                                        }
-                                        placeholder="100"
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>Emotion</FieldLabel>
-                                    <Select
-                                        value={form.emotion}
-                                        onChange={(e) =>
-                                            set("emotion", e.target.value)
-                                        }
-                                    >
-                                        <option value="">Select emotion...</option>
-                                        <option value="confident">
-                                            Confident
-                                        </option>
-                                        <option value="nervous">Nervous</option>
-                                        <option value="tired">Tired</option>
-                                        <option value="frustrated">
-                                            Frustrated
-                                        </option>
-                                        <option value="excited">Excited</option>
-                                    </Select>
-                                </div>
+                                        {tag}
+                                    </button>
+                                ))}
                             </div>
-                        </div>
+                        )}
 
-                        {/* Section 4: Rules & Mistakes */}
-                        <div>
-                            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
-                                Compliance
-                            </h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <FieldLabel>Followed Rules?</FieldLabel>
-                                    <ToggleButton
-                                        value={form.followedRules}
-                                        onChange={(val) =>
-                                            set("followedRules", val)
-                                        }
-                                    />
-                                </div>
-                                <div>
-                                    <FieldLabel>Mistakes / Notes</FieldLabel>
-                                    <Textarea
-                                        value={form.mistakes}
-                                        onChange={(e) =>
-                                            set("mistakes", e.target.value)
-                                        }
-                                        placeholder="What mistakes did you make?"
-                                        className="min-h-[80px]"
-                                    />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
                         <div className="flex items-center gap-3 pt-4 border-t border-surface-500/20">
                             <button
                                 onClick={onClose}
-                                className="px-4 py-2 rounded-lg text-xs font-semibold border border-surface-500/30 text-gray-400 hover:text-gray-300 hover:border-surface-500/50 transition-all"
+                                type="button"
+                                className="px-4 py-2 rounded-lg text-xs font-semibold border border-surface-500/30 text-gray-400 hover:text-gray-300 transition-all"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={handleSave}
                                 disabled={isSaving}
-                                className="ml-auto px-4 py-2 rounded-lg text-xs font-semibold bg-neon-green/10 text-neon-green border border-neon-green/30 hover:bg-neon-green/20 transition-all disabled:opacity-50 flex items-center gap-2"
+                                className="ml-auto inline-flex items-center gap-2 rounded-xl bg-neon-green/10 text-neon-green px-4 py-2 text-xs font-semibold border border-neon-green/30 hover:bg-neon-green/20 disabled:opacity-50"
                             >
-                                <Save className="h-3.5 w-3.5" />
+                                <Save className="h-4 w-4" />
                                 {isSaving ? "Saving..." : "Save Changes"}
+                                <ArrowRight className="h-4 w-4" />
                             </button>
                         </div>
                     </CardContent>
