@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+// Shared cache headers for GET requests — allows browser to serve a cached
+// response instantly while revalidating in the background.
+const CACHE_HEADERS = {
+    "Cache-Control": "private, max-age=0, stale-while-revalidate=30",
+};
+
 export async function GET() {
     try {
         const trades = await prisma.trade.findMany({
@@ -10,7 +16,8 @@ export async function GET() {
                 date: "desc",
             },
         });
-        return NextResponse.json(trades);
+
+        return NextResponse.json(trades, { headers: CACHE_HEADERS });
     } catch (error) {
         console.error("Failed to fetch trades:", error);
         return NextResponse.json({ error: "Failed to fetch trades" }, { status: 500 });

@@ -469,6 +469,19 @@ export default function GoalsPage() {
                             };
                             const c = catColors[goal.category] || "white";
 
+                            const endDate = new Date(goal.endDate);
+                            const today = new Date();
+                            const diffTime = endDate.getTime() - today.getTime();
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                            let countdownText = "";
+                            if (diffDays > 0) {
+                                countdownText = `${diffDays} days left`;
+                            } else if (diffDays === 0) {
+                                countdownText = "Due today";
+                            } else {
+                                countdownText = `Overdue by ${Math.abs(diffDays)} days`;
+                            }
+
                             return (
                                 <div key={goal.id} className={`glass-card rounded-2xl p-5 border border-white/5 relative overflow-hidden hover:border-${c}/30 transition-all animate-slide-up-fade stagger-${(i%5)+1}`}>
                                     <div className="flex justify-between items-start mb-4">
@@ -476,8 +489,11 @@ export default function GoalsPage() {
                                             {goal.category}
                                         </Badge>
                                         <div className="flex items-center gap-3">
-                                            <div className="text-[10px] text-gray-500 font-mono">
-                                                Due {new Date(goal.endDate).toLocaleDateString()}
+                                            <div className="text-[10px] text-gray-500 font-mono text-right">
+                                                <div className={diffDays < 0 ? "text-neon-red" : diffDays <= 3 ? "text-neon-yellow" : ""}>
+                                                    {countdownText}
+                                                </div>
+                                                <div className="opacity-60">Due {new Date(goal.endDate).toLocaleDateString()}</div>
                                             </div>
                                             <button 
                                                 onClick={() => deleteGoal(goal.id)}

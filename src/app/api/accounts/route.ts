@@ -3,10 +3,14 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const CACHE_HEADERS = {
+    "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+};
+
 export async function GET() {
     try {
         const accounts = await prisma.account.findMany({ orderBy: { name: "asc" } });
-        return NextResponse.json(accounts || []);
+        return NextResponse.json(accounts || [], { headers: CACHE_HEADERS });
     } catch (error) {
         console.error("Failed to fetch accounts:", error);
         const message = error instanceof Error ? error.message : "Unknown error";

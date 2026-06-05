@@ -3,6 +3,10 @@ import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
 
+const CACHE_HEADERS = {
+    "Cache-Control": "private, max-age=0, stale-while-revalidate=60",
+};
+
 export async function GET() {
     try {
         const goals = await prisma.goal.findMany({
@@ -10,7 +14,7 @@ export async function GET() {
                 createdAt: "desc",
             },
         });
-        return NextResponse.json(goals);
+        return NextResponse.json(goals, { headers: CACHE_HEADERS });
     } catch (error) {
         console.error("Failed to fetch goals:", error);
         return NextResponse.json({ error: "Failed to fetch goals" }, { status: 500 });
