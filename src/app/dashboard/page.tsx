@@ -234,6 +234,11 @@ export default function DashboardPage() {
         let worstTrade = 0;
         let currentMonthPnl = 0;
         
+        let maxWinStreak = 0;
+        let maxLossStreak = 0;
+        let tempWinStreak = 0;
+        let tempLossStreak = 0;
+        
         const now = new Date();
         const currentMonth = now.getMonth();
         const currentYear = now.getFullYear();
@@ -245,10 +250,21 @@ export default function DashboardPage() {
                 grossProfit += amount;
                 totalPnl += amount;
                 if (amount > bestTrade) bestTrade = amount;
+                
+                tempWinStreak++;
+                tempLossStreak = 0;
+                if (tempWinStreak > maxWinStreak) maxWinStreak = tempWinStreak;
             } else if (t.outcome === "Loss") {
                 grossLoss += amount;
                 totalPnl -= amount;
                 if (amount > worstTrade) worstTrade = amount;
+                
+                tempLossStreak++;
+                tempWinStreak = 0;
+                if (tempLossStreak > maxLossStreak) maxLossStreak = tempLossStreak;
+            } else if (t.outcome === "BE") {
+                tempWinStreak = 0;
+                tempLossStreak = 0;
             }
             
             if (t.date && t.date !== "—") {
@@ -287,9 +303,13 @@ export default function DashboardPage() {
                 !(t.poiTapped === true && t.chochConfirmed === true)
         ).length;
 
+        const currentWinStreak = tempWinStreak;
+        const currentLossStreak = tempLossStreak;
+
         return {
             total, wins, losses, be, winRate, avgRR, totalPnl,
             profitFactor, bestTrade, worstTrade, currentMonthPnl,
+            currentWinStreak, currentLossStreak, maxWinStreak, maxLossStreak,
             ruleAdherence, ruleBreakPct, rulesFollowed, rulesBroken,
             followedWinRate, brokenWinRate, fullConf, partialConf,
         };
@@ -431,8 +451,8 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            {/* ─── 8 KPI Cards Grid ─────────────────────────────────────── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {/* ─── KPI Cards Grid ─────────────────────────────────────── */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
                 <KPICard
                     title="Total Trades"
                     value={metrics.total}
@@ -513,6 +533,22 @@ export default function DashboardPage() {
                     delayClass="stagger-8"
                     trend={metrics.currentMonthPnl >= 0 ? "up" : "down"}
                     subtext="Performance this month"
+                />
+                <KPICard
+                    title="Win Streak"
+                    value={metrics.currentWinStreak}
+                    icon={TrendingUp}
+                    color="green"
+                    delayClass="stagger-8"
+                    subtext={`Max: ${metrics.maxWinStreak} consecutive`}
+                />
+                <KPICard
+                    title="Loss Streak"
+                    value={metrics.currentLossStreak}
+                    icon={TrendingDown}
+                    color="red"
+                    delayClass="stagger-8"
+                    subtext={`Max: ${metrics.maxLossStreak} consecutive`}
                 />
             </div>
 

@@ -80,6 +80,9 @@ export function BottomNav() {
                         <Link href="/news" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl bg-surface-700/30 hover:bg-surface-700/60 border border-white/5 transition-colors">
                             <span className="text-sm font-medium text-white">News</span>
                         </Link>
+                        <Link href="/goals" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl bg-surface-700/30 hover:bg-surface-700/60 border border-white/5 transition-colors">
+                            <span className="text-sm font-medium text-white">Goals</span>
+                        </Link>
                         <Link href="/calculator" onClick={() => setMenuOpen(false)} className="flex items-center gap-3 p-3 rounded-xl bg-surface-700/30 hover:bg-surface-700/60 border border-white/5 transition-colors">
                             <span className="text-sm font-medium text-white">Calculator</span>
                         </Link>

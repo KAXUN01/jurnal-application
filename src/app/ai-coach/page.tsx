@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
@@ -19,7 +19,11 @@ import {
     XCircle,
     Info,
     Crosshair,
-    Lightbulb
+    Lightbulb,
+    History,
+    ArrowUpRight,
+    ArrowDownRight,
+    Minus
 } from "lucide-react";
 import {
     AreaChart,
@@ -56,6 +60,23 @@ type AIAnalysisResponse = {
     improvementPlan: { rank: number, text: string, impact: string }[];
     profile: { title: string, badges: string[], strengths: string, weaknesses: string };
     insights: string[];
+};
+
+type ComparisonResult = {
+    scoreDeltas: { category: string; previous: number; current: number; delta: number }[];
+    overallDelta: number;
+    summary: string;
+    improvements: string[];
+    regressions: string[];
+    nextSteps: string[];
+    previousDate: string;
+};
+
+type AiAnalysisRecord = AIAnalysisResponse & {
+    id: string;
+    filters: any;
+    createdAt: string;
+    comparison?: ComparisonResult | null;
 };
 
 // ─── Reusable Components ───────────────────────────────────────────
@@ -105,13 +126,33 @@ export default function AICoachPage() {
     // UI States
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isChatting, setIsChatting] = useState(false);
-    const [analysisData, setAnalysisData] = useState<AIAnalysisResponse | null>(null);
+    const [analysisData, setAnalysisData] = useState<AiAnalysisRecord | null>(null);
+    const [analysisHistory, setAnalysisHistory] = useState<AiAnalysisRecord[]>([]);
 
     // Chat States
     const [chatInput, setChatInput] = useState("");
     const [chatMessages, setChatMessages] = useState([
         { role: "assistant", content: "Hello! I am ready to analyze your trades. Run an analysis on the left, or ask me a question here." }
     ]);
+
+    // Fetch history on mount
+    useEffect(() => {
+        fetchHistory();
+    }, []);
+
+    const fetchHistory = async () => {
+        try {
+            const res = await fetch("/api/ai-coach/history");
+            if (res.ok) {
+                const data = await res.json();
+                setAnalysisHistory(data);
+                // Optionally load the most recent analysis automatically
+                // if (data.length > 0) setAnalysisData(data[0]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch history:", error);
+        }
+    };
 
     const handleAnalyze = async () => {
         setIsAnalyzing(true);
@@ -131,6 +172,9 @@ export default function AICoachPage() {
 
             const data = await response.json();
             setAnalysisData(data);
+            
+            // Refresh history to show the new analysis
+            fetchHistory();
 
             // Add a chat message to acknowledge
             setChatMessages(prev => [
@@ -144,6 +188,10 @@ export default function AICoachPage() {
         } finally {
             setIsAnalyzing(false);
         }
+    };
+
+    const loadHistoryItem = (item: AiAnalysisRecord) => {
+        setAnalysisData(item);
     };
 
     const handleChatSubmit = async (e: React.FormEvent) => {
@@ -178,6 +226,12 @@ export default function AICoachPage() {
         }
     };
 
+    const formatDate = (isoString: string) => {
+        return new Date(isoString).toLocaleDateString('en-US', { 
+            month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+    };
+
     return (
         <div className="max-w-[1600px] mx-auto pb-12 animate-fade-in">
             {/* ─── Header ────────────────────────────────────────────── */}
@@ -195,9 +249,10 @@ export default function AICoachPage() {
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                {/* ─── Left Panel: Trade Selection (Col span 3) ───────── */}
+                {/* ─── Left Panel: Trade Selection & History (Col span 3) ───────── */}
                 <div className="lg:col-span-3 space-y-6">
-                    <div className="glass-card rounded-2xl p-6 border border-white/5 sticky top-24">
+                    {/* Controls Card */}
+                    <div className="glass-card rounded-2xl p-6 border border-white/5">
                         <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-widest mb-6">
                             <Filter className="h-4 w-4" />
                             Data Selection
@@ -286,6 +341,42 @@ export default function AICoachPage() {
                             </button>
                         </div>
                     </div>
+
+                    {/* History Panel */}
+                    <div className="glass-card rounded-2xl p-6 border border-white/5 sticky top-24">
+                        <div className="flex items-center gap-2 text-xs font-semibold text-gray-400 uppercase tracking-widest mb-4">
+                            <History className="h-4 w-4" />
+                            Recent Analyses
+                        </div>
+                        {analysisHistory.length === 0 ? (
+                            <div className="text-center py-6 text-sm text-gray-500">
+                                No past analyses found. Run your first analysis above!
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {analysisHistory.map((item) => {
+                                    const isSelected = analysisData?.id === item.id;
+                                    return (
+                                        <div 
+                                            key={item.id}
+                                            onClick={() => loadHistoryItem(item)}
+                                            className={`p-3 rounded-xl border cursor-pointer transition-all ${isSelected ? "bg-neon-blue/10 border-neon-blue/40 shadow-glow-blue/10" : "bg-surface-800/40 border-surface-600/30 hover:border-surface-500/60"}`}
+                                        >
+                                            <div className="flex justify-between items-start mb-1">
+                                                <span className="text-xs font-mono text-gray-400">{formatDate(item.createdAt)}</span>
+                                                <span className={`text-xs font-bold ${item.qualityScore.total >= 80 ? 'text-neon-green' : item.qualityScore.total >= 60 ? 'text-neon-yellow' : 'text-neon-red'}`}>
+                                                    Score: {item.qualityScore.total}
+                                                </span>
+                                            </div>
+                                            <div className="text-sm text-gray-300 truncate font-medium">
+                                                {item.filters?.analysisTarget || "Analysis"}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </div>
                 </div>
 
                 {/* ─── Right Panel: Analysis Results (Col span 9) ─────── */}
@@ -302,13 +393,53 @@ export default function AICoachPage() {
                         </div>
                     ) : (
                         <>
+                            {/* Comparison Banner */}
+                            {analysisData.comparison && (
+                                <div className="glass-card rounded-2xl p-6 border border-white/5 bg-gradient-to-r from-surface-800 to-surface-900 overflow-hidden relative">
+                                    <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
+                                        <TrendingUp className="w-32 h-32" />
+                                    </div>
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className={`p-2 rounded-lg ${analysisData.comparison.overallDelta >= 0 ? 'bg-neon-green/10 text-neon-green' : 'bg-neon-red/10 text-neon-red'}`}>
+                                            {analysisData.comparison.overallDelta >= 0 ? <TrendingUp className="h-5 w-5" /> : <Activity className="h-5 w-5" />}
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold text-white">Performance Delta</h3>
+                                            <p className="text-xs text-gray-400 font-mono">Compared to previous analysis ({formatDate(analysisData.comparison.previousDate)})</p>
+                                        </div>
+                                        <div className="ml-auto flex items-center gap-2 bg-surface-950 px-4 py-2 rounded-xl border border-surface-600/50">
+                                            <span className="text-sm text-gray-400 uppercase tracking-wider font-semibold">Overall</span>
+                                            <span className={`text-xl font-bold flex items-center ${analysisData.comparison.overallDelta >= 0 ? 'text-neon-green' : 'text-neon-red'}`}>
+                                                {analysisData.comparison.overallDelta > 0 ? '+' : ''}{analysisData.comparison.overallDelta}
+                                                {analysisData.comparison.overallDelta > 0 ? <ArrowUpRight className="h-5 w-5 ml-1" /> : analysisData.comparison.overallDelta < 0 ? <ArrowDownRight className="h-5 w-5 ml-1" /> : <Minus className="h-5 w-5 ml-1 text-gray-500" />}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mt-6">
+                                        {analysisData.comparison.scoreDeltas.filter(d => d.category !== "Overall").map(delta => (
+                                            <div key={delta.category} className="p-3 rounded-xl bg-surface-800 border border-surface-600/30 flex flex-col justify-between">
+                                                <span className="text-xs text-gray-400 font-mono mb-2">{delta.category}</span>
+                                                <div className="flex justify-between items-end">
+                                                    <span className="text-base font-bold text-white">{delta.current}</span>
+                                                    <span className={`text-xs font-bold flex items-center ${delta.delta > 0 ? 'text-neon-green' : delta.delta < 0 ? 'text-neon-red' : 'text-gray-500'}`}>
+                                                        {delta.delta > 0 ? '+' : ''}{delta.delta}
+                                                        {delta.delta > 0 ? <ArrowUpRight className="h-3 w-3 ml-0.5" /> : delta.delta < 0 ? <ArrowDownRight className="h-3 w-3 ml-0.5" /> : null}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
                             {/* Top Stats Row */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 {/* Trade Quality Score */}
-                                <div className="glass-card rounded-2xl p-6 border border-white/5 relative overflow-hidden">
+                                <div className="glass-card rounded-2xl p-6 border border-white/5 relative">
                                     <SectionHeader title="Trade Quality Score" icon={Target} color="green" />
                                     <div className="flex flex-col md:flex-row items-center gap-8">
-                                        <div className="relative w-40 h-40 flex items-center justify-center shrink-0">
+                                        <div className="relative w-40 h-40 mb-6 flex items-center justify-center shrink-0">
                                             <svg viewBox="0 0 100 100" className="w-full h-full transform -rotate-90">
                                                 <circle cx="50" cy="50" r="45" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="8" />
                                                 <circle cx="50" cy="50" r="45" fill="none" stroke="url(#gradient)" strokeWidth="8" strokeDasharray="283" strokeDashoffset={283 - (283 * analysisData.qualityScore.total) / 100} className="transition-all duration-1000" />
@@ -323,7 +454,7 @@ export default function AICoachPage() {
                                                 <span className="text-4xl font-black font-mono text-gradient-green">{analysisData.qualityScore.total}</span>
                                                 <span className="text-[10px] text-gray-400 font-mono uppercase tracking-widest">/ 100</span>
                                             </div>
-                                            <div className="absolute -bottom-2 text-sm font-bold text-neon-green bg-neon-green/10 px-3 py-1 rounded-full border border-neon-green/20">
+                                            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-sm font-bold text-neon-green bg-neon-green/10 px-3 py-1 rounded-full border border-neon-green/20 whitespace-nowrap">
                                                 {analysisData.qualityScore.total >= 90 ? "Excellent" : analysisData.qualityScore.total >= 70 ? "Good" : analysisData.qualityScore.total >= 50 ? "Average" : "Poor"}
                                             </div>
                                         </div>
@@ -484,6 +615,65 @@ export default function AICoachPage() {
                                     </div>
                                 </div>
                             </div>
+                            
+                            {/* "How You Improved" Section (shown if comparison data exists) */}
+                            {analysisData.comparison && (
+                                <div className="glass-card rounded-2xl p-6 border border-white/5">
+                                    <SectionHeader title="How You Improved" icon={ArrowUpRight} color="blue" />
+                                    <div className="space-y-6">
+                                        <p className="text-sm text-gray-300 leading-relaxed p-4 rounded-xl bg-surface-800/50 border border-surface-600">
+                                            "{analysisData.comparison.summary}"
+                                        </p>
+                                        
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-3">
+                                                <h4 className="text-xs font-bold text-neon-green uppercase tracking-widest flex items-center gap-2">
+                                                    <CheckCircle2 className="h-4 w-4" /> Improvements
+                                                </h4>
+                                                {analysisData.comparison.improvements.length === 0 ? (
+                                                    <p className="text-sm text-gray-500 italic">No major improvements detected this period.</p>
+                                                ) : (
+                                                    <ul className="space-y-2">
+                                                        {analysisData.comparison.improvements.map((item, i) => (
+                                                            <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                                                                <span className="text-neon-green mt-1 text-xs">▲</span> {item}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </div>
+                                            
+                                            <div className="space-y-3">
+                                                <h4 className="text-xs font-bold text-neon-red uppercase tracking-widest flex items-center gap-2">
+                                                    <XCircle className="h-4 w-4" /> Regressions & Focus Areas
+                                                </h4>
+                                                {analysisData.comparison.regressions.length === 0 ? (
+                                                    <p className="text-sm text-gray-500 italic">Great job! No regressions detected.</p>
+                                                ) : (
+                                                    <ul className="space-y-2">
+                                                        {analysisData.comparison.regressions.map((item, i) => (
+                                                            <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                                                                <span className="text-neon-red mt-1 text-xs">▼</span> {item}
+                                                            </li>
+                                                        ))}
+                                                    </ul>
+                                                )}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-4 p-4 rounded-xl bg-neon-blue/5 border border-neon-blue/20">
+                                            <h4 className="text-xs font-bold text-neon-blue uppercase tracking-widest mb-3">Action Items</h4>
+                                            <ul className="space-y-2">
+                                                {analysisData.comparison.nextSteps.map((step, i) => (
+                                                    <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                                                        <div className="w-1.5 h-1.5 rounded-full bg-neon-blue mt-1.5 shrink-0" /> {step}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* Personality & Insights */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

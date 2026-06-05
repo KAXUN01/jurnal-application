@@ -73,6 +73,70 @@ if (process.env.NODE_ENV !== "production") {
             console.error("failed to create Account table:", e);
         });
 
+    // Create Goal table
+    prisma
+        .$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Goal" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "title" TEXT NOT NULL,
+          "category" TEXT NOT NULL,
+          "targetValue" REAL NOT NULL,
+          "currentValue" REAL NOT NULL DEFAULT 0,
+          "unit" TEXT NOT NULL DEFAULT '',
+          "timeframe" TEXT NOT NULL,
+          "startDate" TEXT NOT NULL,
+          "endDate" TEXT NOT NULL,
+          "priority" TEXT NOT NULL DEFAULT 'medium',
+          "status" TEXT NOT NULL DEFAULT 'active',
+          "notes" TEXT,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL
+      );
+    `
+        .catch((e) => {
+            console.error("failed to create Goal table:", e);
+        });
+
+    // Create Habit table
+    prisma
+        .$executeRaw`
+      CREATE TABLE IF NOT EXISTS "Habit" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "name" TEXT NOT NULL,
+          "category" TEXT NOT NULL,
+          "date" TEXT NOT NULL,
+          "completed" BOOLEAN NOT NULL DEFAULT false,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL
+      );
+    `
+        .catch((e) => {
+            console.error("failed to create Habit table:", e);
+        });
+
+    // Create AiAnalysis table
+    prisma
+        .$executeRaw`
+      CREATE TABLE IF NOT EXISTS "AiAnalysis" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "filters" TEXT NOT NULL,
+          "qualityScore" TEXT NOT NULL,
+          "executiveSummary" TEXT NOT NULL,
+          "compliance" TEXT NOT NULL,
+          "complianceNote" TEXT,
+          "psychology" TEXT NOT NULL,
+          "risk" TEXT NOT NULL,
+          "patterns" TEXT NOT NULL,
+          "improvementPlan" TEXT NOT NULL,
+          "profile" TEXT NOT NULL,
+          "insights" TEXT NOT NULL,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `
+        .catch((e) => {
+            console.error("failed to create AiAnalysis table:", e);
+        });
+
     // Add missing columns to Trade if they are not present
     (async () => {
         try {

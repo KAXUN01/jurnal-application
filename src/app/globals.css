@@ -642,7 +642,74 @@
 .light .kpi-glow-red:hover,
 .light .kpi-glow-blue:hover,
 .light .kpi-glow-cyan:hover,
-.light .kpi-glow-purple:hover,
 .light .kpi-glow-yellow:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12), 0 8px 32px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* ─── Goals & Performance Specific Styles ────────────────────────── */
+@layer utilities {
+  .circular-progress {
+    transform: rotate(-90deg);
+  }
+  
+  .circular-progress-bg {
+    stroke: rgba(255, 255, 255, 0.05);
+  }
+  
+  .circular-progress-bar {
+    stroke-linecap: round;
+    transition: stroke-dashoffset 1s ease-in-out;
+  }
+
+  .habit-cell {
+    transition: all 0.2s ease;
+  }
+  .habit-cell:hover {
+    transform: scale(1.1);
+    z-index: 10;
+  }
+  .habit-cell-active {
+    background: linear-gradient(135deg, #00ff88, #00cc6a);
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.4);
+    border-color: rgba(0, 255, 136, 0.5);
+  }
+  .habit-cell-inactive {
+    background: rgba(255, 255, 255, 0.02);
+    border-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .badge-locked {
+    filter: grayscale(100%) opacity(30%);
+    transition: all 0.3s ease;
+  }
+  .badge-unlocked {
+    filter: grayscale(0%) opacity(100%);
+    box-shadow: 0 0 15px currentColor;
+    animation: pulse-glow 2s infinite;
+  }
+
+  .challenge-card {
+    position: relative;
+    overflow: hidden;
+  }
+  .challenge-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid transparent;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0)) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+}
+
+.light .circular-progress-bg {
+  stroke: rgba(0, 0, 0, 0.05);
+}
+.light .habit-cell-inactive {
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.05);
 }

@@ -35,10 +35,31 @@ export async function POST(request: Request) {
             pnl: t.profitLoss,
             rr: t.rrRatio,
             type: t.tradeType,
-            rules: t.followedRules ? "Followed" : t.followedRules === false ? "Broken" : "Unknown",
+            rules: (t as any).followedRules ? "Followed" : (t as any).followedRules === false ? "Broken" : "Unknown",
             notes: `${t.beforeTrade} ${t.duringTrade} ${t.afterTrade}`.trim(),
-            mistakes: t.mistakes
+            mistakes: (t as any).mistakes
         }));
+
+        // ─── Fetch the previous (latest) analysis for comparison context ───
+        const previousAnalysis = await prisma.aiAnalysis.findFirst({
+            orderBy: { createdAt: "desc" },
+        });
+
+        let previousContext = "";
+        if (previousAnalysis) {
+            previousContext = `
+
+IMPORTANT: The user has a previous analysis from ${previousAnalysis.createdAt.toISOString()}.
+Previous quality scores: ${previousAnalysis.qualityScore}
+Previous executive summary: ${previousAnalysis.executiveSummary}
+Previous patterns: ${previousAnalysis.patterns}
+Previous improvement plan: ${previousAnalysis.improvementPlan}
+Previous psychology: ${previousAnalysis.psychology}
+Previous risk profile: ${previousAnalysis.risk}
+
+When generating the new analysis, keep in mind these previous results so you can provide context-aware insights. The comparison will be generated separately.
+`;
+        }
 
         const systemPrompt = `
 You are an elite AI Trading Coach. Analyze the following trade history and provide a structured JSON response.
@@ -46,7 +67,7 @@ Do NOT wrap the response in markdown blocks like \`\`\`json. Just return raw val
 
 Here is the user's trade data context (up to 50 recent trades matching their filter: ${analysisTarget}):
 ${JSON.stringify(tradesContext)}
-
+${previousContext}
 Analyze this data and return exactly this JSON structure:
 {
   "qualityScore": {
@@ -135,7 +156,143 @@ Ensure the output is 100% valid JSON and nothing else.
         const jsonString = content.substring(jsonStart, jsonEnd + 1);
         const parsedJson = JSON.parse(jsonString);
 
-        return NextResponse.json(parsedJson);
+        // ─── Save the analysis to DB ───────────────────────────────────
+        const savedAnalysis = await prisma.aiAnalysis.create({
+            data: {
+                filters: JSON.stringify({ dateRange, symbol, strategy, winLoss, session, analysisTarget }),
+                qualityScore: JSON.stringify(parsedJson.qualityScore),
+                executiveSummary: JSON.stringify(parsedJson.executiveSummary),
+                compliance: JSON.stringify(parsedJson.compliance),
+                complianceNote: parsedJson.complianceNote || null,
+                psychology: JSON.stringify(parsedJson.psychology),
+                risk: JSON.stringify(parsedJson.risk),
+                patterns: JSON.stringify(parsedJson.patterns),
+                improvementPlan: JSON.stringify(parsedJson.improvementPlan),
+                profile: JSON.stringify(parsedJson.profile),
+                insights: JSON.stringify(parsedJson.insights),
+            }
+        });
+
+        // ─── Prune to keep only the latest 5 analyses ──────────────────
+        const allAnalyses = await prisma.aiAnalysis.findMany({
+            orderBy: { createdAt: "desc" },
+            select: { id: true },
+        });
+        if (allAnalyses.length > 5) {
+            const idsToKeep = allAnalyses.slice(0, 5).map(a => a.id);
+            await prisma.aiAnalysis.deleteMany({
+                where: { id: { notIn: idsToKeep } }
+            });
+        }
+
+        // ─── Generate comparison with previous analysis ─────────────────
+        let comparison = null;
+        if (previousAnalysis) {
+            const prevScores = JSON.parse(previousAnalysis.qualityScore);
+            const newScores = parsedJson.qualityScore;
+
+            // Build score deltas
+            const scoreDeltas = [
+                { category: "Overall", previous: prevScores.total, current: newScores.total, delta: newScores.total - prevScores.total },
+                { category: "Entry Quality", previous: prevScores.entry, current: newScores.entry, delta: newScores.entry - prevScores.entry },
+                { category: "Risk Management", previous: prevScores.risk, current: newScores.risk, delta: newScores.risk - prevScores.risk },
+                { category: "Psychology", previous: prevScores.psychology, current: newScores.psychology, delta: newScores.psychology - prevScores.psychology },
+                { category: "Trade Management", previous: prevScores.management, current: newScores.management, delta: newScores.management - prevScores.management },
+                { category: "Compliance", previous: prevScores.compliance, current: newScores.compliance, delta: newScores.compliance - prevScores.compliance },
+            ];
+
+            const overallDelta = newScores.total - prevScores.total;
+
+            // Ask AI to generate a comparison summary
+            const comparisonPrompt = `
+You are an elite AI Trading Coach. Compare the trader's previous analysis with their new analysis and provide improvement insights.
+Do NOT wrap the response in markdown blocks. Just return raw valid JSON.
+
+Previous analysis:
+- Quality Scores: ${previousAnalysis.qualityScore}
+- Executive Summary: ${previousAnalysis.executiveSummary}
+- Psychology: ${previousAnalysis.psychology}
+- Risk: ${previousAnalysis.risk}
+- Patterns: ${previousAnalysis.patterns}
+- Improvement Plan: ${previousAnalysis.improvementPlan}
+
+New analysis:
+- Quality Scores: ${JSON.stringify(parsedJson.qualityScore)}
+- Executive Summary: ${JSON.stringify(parsedJson.executiveSummary)}
+- Psychology: ${JSON.stringify(parsedJson.psychology)}
+- Risk: ${JSON.stringify(parsedJson.risk)}
+- Patterns: ${JSON.stringify(parsedJson.patterns)}
+- Improvement Plan: ${JSON.stringify(parsedJson.improvementPlan)}
+
+Score changes: ${JSON.stringify(scoreDeltas)}
+
+Return exactly this JSON:
+{
+  "summary": "A 2-3 sentence comparison summary describing the trader's progress.",
+  "improvements": ["Specific improvement 1", "Specific improvement 2"],
+  "regressions": ["Specific regression 1"],
+  "nextSteps": ["Next step 1 to keep improving", "Next step 2"]
+}
+
+If there are no improvements or regressions, return empty arrays for those fields.
+Ensure the output is 100% valid JSON and nothing else.
+`;
+
+            try {
+                const compResponse = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+                    method: "POST",
+                    headers: {
+                        "Authorization": `Bearer ${NVIDIA_NIM_API_KEY}`,
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        model: MODEL,
+                        messages: [
+                            { role: "system", content: comparisonPrompt },
+                            { role: "user", content: "Generate the comparison JSON." }
+                        ],
+                        response_format: { type: "json_object" }
+                    })
+                });
+
+                if (compResponse.ok) {
+                    const compData = await compResponse.json();
+                    const compContent = compData.choices[0].message.content;
+                    const compJsonStart = compContent.indexOf('{');
+                    const compJsonEnd = compContent.lastIndexOf('}');
+                    if (compJsonStart !== -1 && compJsonEnd !== -1) {
+                        const compParsed = JSON.parse(compContent.substring(compJsonStart, compJsonEnd + 1));
+                        comparison = {
+                            scoreDeltas,
+                            overallDelta,
+                            summary: compParsed.summary || "",
+                            improvements: compParsed.improvements || [],
+                            regressions: compParsed.regressions || [],
+                            nextSteps: compParsed.nextSteps || [],
+                            previousDate: previousAnalysis.createdAt.toISOString(),
+                        };
+                    }
+                }
+            } catch (compError) {
+                console.error("Comparison generation failed (non-fatal):", compError);
+                // Still return the analysis even if comparison fails
+                comparison = {
+                    scoreDeltas,
+                    overallDelta,
+                    summary: `Your overall score changed by ${overallDelta > 0 ? '+' : ''}${overallDelta} points since your last analysis.`,
+                    improvements: scoreDeltas.filter(d => d.delta > 0).map(d => `${d.category} improved by +${d.delta} points`),
+                    regressions: scoreDeltas.filter(d => d.delta < 0).map(d => `${d.category} dropped by ${d.delta} points`),
+                    nextSteps: ["Continue focusing on areas that showed regression"],
+                    previousDate: previousAnalysis.createdAt.toISOString(),
+                };
+            }
+        }
+
+        return NextResponse.json({
+            ...parsedJson,
+            analysisId: savedAnalysis.id,
+            comparison,
+        });
 
     } catch (error: any) {
         console.error("AI Analysis Error:", error);

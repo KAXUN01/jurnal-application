@@ -12,6 +12,7 @@ import {
     Calculator,
     Wallet,
     Brain,
+    Target,
     ChevronLeft,
     ChevronRight,
 } from "lucide-react";
@@ -44,6 +45,11 @@ const navItems = [
         icon: TrendingUp,
     },
     {
+        label: "Goals",
+        href: "/goals",
+        icon: Target,
+    },
+    {
         label: "AI Coach",
         href: "/ai-coach",
         icon: Brain,
@@ -63,6 +69,8 @@ const navItems = [
 export function Sidebar() {
     const pathname = usePathname();
     const [collapsed, setCollapsed] = useState(false);
+
+    if (pathname === "/login") return null;
 
     return (
         <aside

@@ -60,3 +60,57 @@ model Account {
 
   trades          Trade[]
 }
+
+model Goal {
+  id            String   @id @default(cuid())
+  title         String
+  category      String   // "profit" | "consistency" | "risk" | "psychology" | "strategy"
+  targetValue   Float
+  currentValue  Float    @default(0)
+  unit          String   @default("")   // "$", "%", "days", "trades", "R"
+  timeframe     String   // "daily" | "weekly" | "monthly" | "quarterly" | "yearly" | "custom"
+  startDate     String
+  endDate       String
+  priority      String   @default("medium") // "low" | "medium" | "high" | "critical"
+  status        String   @default("active") // "active" | "completed" | "failed" | "paused"
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Habit {
+  id          String   @id @default(cuid())
+  name        String
+  category    String   // "discipline" | "analysis" | "risk" | "psychology"
+  date        String   // YYYY-MM-DD
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model AiAnalysis {
+  id               String   @id @default(cuid())
+  filters          String   // JSON: { dateRange, symbol, strategy, winLoss, session, analysisTarget }
+  qualityScore     String   // JSON: qualityScore object
+  executiveSummary String   // JSON: executiveSummary object
+  compliance       String   // JSON: compliance array
+  complianceNote   String?  // optional text
+  psychology       String   // JSON: psychology object
+  risk             String   // JSON: risk object
+  patterns         String   // JSON: patterns object
+  improvementPlan  String   // JSON: improvementPlan array
+  profile          String   // JSON: profile object
+  insights         String   // JSON: insights array
+  createdAt        DateTime @default(now())
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  password      String?
+  image         String?
+  role          String    @default("admin")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}

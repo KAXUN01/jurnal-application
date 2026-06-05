@@ -14,6 +14,7 @@ interface TradeEntry {
     tradeDirection?: string;
     date: string;
     time?: string;
+    entryExecutionTime?: string;
     entryPrice: string;
     stopLoss: string;
     takeProfit: string;
@@ -169,8 +170,8 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
                                 <Input type="date" value={form.date} onChange={(e) => set("date", e.target.value)} />
                             </div>
                             <div>
-                                <FieldLabel>Time</FieldLabel>
-                                <Input type="time" value={form.time || ""} onChange={(e) => set("time", e.target.value)} />
+                                <FieldLabel>Entry Execution Time</FieldLabel>
+                                <Input type="time" value={form.entryExecutionTime || ""} onChange={(e) => set("entryExecutionTime", e.target.value)} />
                             </div>
                             <div>
                                 <FieldLabel>Outcome</FieldLabel>

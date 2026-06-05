@@ -32,6 +32,7 @@ interface TradeEntry {
     tradeDirection?: string;
     date: string;
     time?: string;
+    entryExecutionTime?: string;
     entryPrice: string;
     stopLoss: string;
     takeProfit: string;
