@@ -252,6 +252,7 @@ export default function JournalPage() {
                         <div className="mt-3 grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {screenshotList.map((s, i) => (
                                 <div key={i} className="rounded overflow-hidden border">
+                                    {/* eslint-disable-next-line @next/next/no-img-element */}
                                     <img src={s} alt={`s-${i}`} className="w-full h-24 object-cover" />
                                 </div>
                             ))}

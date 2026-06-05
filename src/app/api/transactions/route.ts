@@ -7,7 +7,7 @@ export async function GET(request: Request) {
     const accountId = searchParams.get('accountId');
     const type = searchParams.get('type');
 
-    const query: any = {};
+    const query: Record<string, string> = {};
     if (accountId) query.accountId = accountId;
     if (type) query.type = type;
 

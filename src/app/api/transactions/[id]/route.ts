@@ -9,7 +9,7 @@ export async function PUT(
     const id = params.id;
     const data = await request.json();
 
-    const updateData: any = { ...data };
+    const updateData: Record<string, unknown> = { ...data };
     if (data.amount !== undefined) updateData.amount = parseFloat(data.amount);
     if (data.grossProfit !== undefined) updateData.grossProfit = parseFloat(data.grossProfit);
     if (data.propShare !== undefined) updateData.propShare = parseFloat(data.propShare);

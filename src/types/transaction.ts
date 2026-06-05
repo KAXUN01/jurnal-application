@@ -2,7 +2,7 @@ export interface Transaction {
   id: string;
   date: string;
   accountId: string;
-  account?: any; // You can type this as Account if needed
+  account?: { id?: string; name?: string; type?: string; balance?: number; [key: string]: unknown }; // You can type this as Account if needed
   type: "withdrawal" | "deposit" | "payout";
   amount: number;
   currency: string;

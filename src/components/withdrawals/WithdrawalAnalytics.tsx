@@ -65,7 +65,7 @@ export function WithdrawalAnalytics({ transactions }: WithdrawalAnalyticsProps) 
     return { monthlyData, accountData, methodData };
   }, [transactions]);
 
-  const CustomTooltip = ({ active, payload, label }: any) => {
+  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: { name: string; value: number }[]; label?: string }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-surface-900 border border-surface-700 p-3 rounded-lg shadow-xl">

@@ -9,14 +9,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { UploadCloud, X } from "lucide-react";
 
 interface WithdrawalFormProps {
-  accounts: any[];
+  accounts: { id: string; name: string; type: string; [key: string]: unknown }[];
   onSuccess: () => void;
   onCancel: () => void;
 }
 
 export function WithdrawalForm({ accounts, onSuccess, onCancel }: WithdrawalFormProps) {
   const [loading, setLoading] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<any>(null);
+  const [selectedAccount, setSelectedAccount] = useState<{ id: string; name: string; type: string; [key: string]: unknown } | null>(null);
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   
   // Form State
@@ -34,7 +34,7 @@ export function WithdrawalForm({ accounts, onSuccess, onCancel }: WithdrawalForm
 
   const handleAccountChange = (id: string) => {
     const acc = accounts.find(a => a.id === id);
-    setSelectedAccount(acc);
+    setSelectedAccount(acc || null);
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -109,7 +109,7 @@ export function WithdrawalForm({ accounts, onSuccess, onCancel }: WithdrawalForm
     <div className="bg-surface-800 border border-surface-700 rounded-xl p-6">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-bold text-white">Record Transaction</h2>
-        <Button variant="ghost" size="icon" onClick={onCancel} className="text-gray-400 hover:text-white">
+        <Button variant="ghost" size="sm" onClick={onCancel} className="text-gray-400 hover:text-white p-2">
           <X className="h-5 w-5" />
         </Button>
       </div>

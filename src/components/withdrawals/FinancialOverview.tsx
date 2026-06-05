@@ -7,7 +7,7 @@ import { useMemo } from "react";
 
 interface FinancialOverviewProps {
   transactions: Transaction[];
-  accounts: any[];
+  accounts: { balance?: number; [key: string]: unknown }[];
 }
 
 export function FinancialOverview({ transactions, accounts }: FinancialOverviewProps) {

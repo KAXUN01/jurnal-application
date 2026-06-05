@@ -273,6 +273,7 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {screenshots.map((src, idx) => (
                                     <div key={idx} className="group relative rounded-lg overflow-hidden border border-surface-500/20">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
                                         <img src={src} alt={`Screenshot ${idx + 1}`} className="w-full h-24 object-cover" />
                                         <button
                                             type="button"

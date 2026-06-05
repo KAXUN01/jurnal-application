@@ -13,7 +13,7 @@ import { Plus } from "lucide-react";
 
 export default function WithdrawalsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<{ id: string; name: string; type: string; balance?: number; [key: string]: unknown }[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
 
