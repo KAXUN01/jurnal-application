@@ -108,7 +108,7 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
         }
     };
 
-    const set = (key: string, value: string | number | null) =>
+    const set = (key: string, value: string | number | boolean | null) =>
         setForm((prev) => (prev ? { ...prev, [key]: value } : null));
 
     if (!isOpen || !form) return null;
