@@ -23,6 +23,8 @@ export function BottomNav() {
     const pathname = usePathname();
     const [menuOpen, setMenuOpen] = useState(false);
 
+    if (pathname === "/login") return null;
+
     return (
         <div className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface-900/95 backdrop-blur-xl border-t border-surface-600/50 pb-safe">
             <nav className="flex items-center justify-around px-2 h-16">
