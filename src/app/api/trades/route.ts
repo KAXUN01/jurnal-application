@@ -53,6 +53,7 @@ export async function POST(request: Request) {
                 beforeTrade: body.beforeTrade,
                 duringTrade: body.duringTrade,
                 afterTrade: body.afterTrade,
+                followedRules: typeof body.followedRules === "boolean" ? body.followedRules : null,
                 beforeScreenshot: body.beforeScreenshot || null,
                 afterScreenshot: body.afterScreenshot || null,
                 screenshots: JSON.stringify(body.screenshots || []),

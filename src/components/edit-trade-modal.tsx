@@ -33,6 +33,7 @@ interface TradeEntry {
     screenshots?: string;
     tags?: string;
     accountId?: string;
+    followedRules?: boolean | null;
 }
 
 interface EditTradeModalProps {
@@ -133,7 +134,7 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                             <div>
                                 <FieldLabel>Pair</FieldLabel>
                                 <Select value={form.pair} onChange={(e) => set("pair", e.target.value)}>
@@ -160,6 +161,20 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
                                     <option value="MSNR">MSNR</option>
                                     <option value="Price Action">Price Action</option>
                                     <option value="Supply Demand">Supply Demand</option>
+                                </Select>
+                            </div>
+                            <div>
+                                <FieldLabel>Followed Rules (SOP)</FieldLabel>
+                                <Select
+                                    value={form.followedRules === true ? "Yes" : form.followedRules === false ? "No" : ""}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        set("followedRules", val === "Yes" ? true : val === "No" ? false : null);
+                                    }}
+                                >
+                                    <option value="">Select...</option>
+                                    <option value="Yes">Yes (Followed)</option>
+                                    <option value="No">No (Rule Break)</option>
                                 </Select>
                             </div>
                         </div>

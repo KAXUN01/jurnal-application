@@ -19,6 +19,12 @@ function FieldLabel({ children }: { children: React.ReactNode }) {
 export default function JournalPage() {
     const [calcModalOpen, setCalcModalOpen] = useState(false);
     const [screenshotUrl, setScreenshotUrl] = useState("");
+    const [pendingChecklist, setPendingChecklist] = useState<{
+        isRuleBreak: boolean;
+        failedItems: string[];
+        checklistResult: string;
+        timestamp: string;
+    } | null>(null);
     const [form, setForm] = useState(() => ({
         pair: "",
         tradeDirection: "",
@@ -43,9 +49,24 @@ export default function JournalPage() {
         screenshots: [] as string[],
         tags: [] as string[],
         tagInput: "",
+        followedRules: true as boolean | null,
     }));
 
     const set = (key: string, value: string | string[] | number | boolean | null) => setForm((prev) => ({ ...prev, [key]: value }));
+
+    // Load pending checklist state from localStorage
+    useEffect(() => {
+        const stored = localStorage.getItem("tradeflow-pending-checklist");
+        if (stored) {
+            try {
+                const parsed = JSON.parse(stored);
+                setPendingChecklist(parsed);
+                set("followedRules", !parsed.isRuleBreak);
+            } catch (e) {
+                console.error("Failed to load pending checklist:", e);
+            }
+        }
+    }, []);
 
     const rrRatio = useMemo(() => {
         const entry = parseFloat(form.entryPrice as string);
@@ -69,6 +90,11 @@ export default function JournalPage() {
                 body: JSON.stringify({ ...form, rrRatio, screenshots: screenshotList }),
             });
             if (!res.ok) throw new Error("Failed to save");
+
+            // Clear pending checklist on successful log
+            localStorage.removeItem("tradeflow-pending-checklist");
+            setPendingChecklist(null);
+
             // reset minimal fields after save
             setForm((prev) => ({ ...prev, screenshots: [], tags: [], tagInput: "" }));
             alert("Saved");
@@ -80,6 +106,37 @@ export default function JournalPage() {
 
     return (
         <div className="space-y-4">
+            {pendingChecklist && (
+                <div className={`p-4 rounded-xl border flex items-center justify-between gap-4 animate-fade-in ${
+                    pendingChecklist.isRuleBreak
+                        ? "bg-neon-red/10 border-neon-red/20 text-neon-red"
+                        : "bg-neon-green/10 border-neon-green/20 text-neon-green"
+                }`}>
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <span className="text-sm font-semibold">
+                            {pendingChecklist.isRuleBreak
+                                ? "⚠️ SOP Checklist Warning: Trade logged with Rule Breaks"
+                                : "✅ SOP Checklist Success: All rules followed!"}
+                        </span>
+                        {pendingChecklist.failedItems.length > 0 && (
+                            <span className="text-xs font-mono opacity-80">
+                                (Failed checks: {pendingChecklist.failedItems.join(", ")})
+                            </span>
+                        )}
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            localStorage.removeItem("tradeflow-pending-checklist");
+                            setPendingChecklist(null);
+                        }}
+                        className="text-xs underline hover:opacity-80 shrink-0"
+                    >
+                        Dismiss
+                    </button>
+                </div>
+            )}
+
             <Card className="border-neon-blue/15">
                 <CardHeader>
                     <CardTitle>Trade Information</CardTitle>
@@ -115,6 +172,20 @@ export default function JournalPage() {
                                 <option value="">Select strategy...</option>
                                 <option value="MSNR">MSNR</option>
                                 <option value="Price Action">Price Action</option>
+                            </Select>
+                        </div>
+                        <div>
+                            <FieldLabel>Followed Rules (SOP)</FieldLabel>
+                            <Select
+                                value={form.followedRules === true ? "Yes" : form.followedRules === false ? "No" : ""}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    set("followedRules", val === "Yes" ? true : val === "No" ? false : null);
+                                }}
+                            >
+                                <option value="">Select...</option>
+                                <option value="Yes">Yes (Followed)</option>
+                                <option value="No">No (Rule Break)</option>
                             </Select>
                         </div>
                     </div>

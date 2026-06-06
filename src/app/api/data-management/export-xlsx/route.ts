@@ -64,6 +64,9 @@ export async function GET() {
                     "Before Trade": t.beforeTrade,
                     "During Trade": t.duringTrade,
                     "After Trade": t.afterTrade,
+                    "Before Screenshot": t.beforeScreenshot || "",
+                    "After Screenshot": t.afterScreenshot || "",
+                    Screenshots: t.screenshots || "",
                     Tags: t.tags || "",
                     "Created At": t.createdAt?.toISOString() || "",
                 }))
