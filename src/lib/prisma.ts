@@ -176,6 +176,7 @@ if (process.env.NODE_ENV !== "production" && !globalForPrisma.__prisma_migration
             await ensureColumn('screenshots', 'TEXT');
             await ensureColumn('tags', 'TEXT');
             await ensureColumn('entryExecutionTime', 'TEXT');
+            await ensureColumn('followedRules', 'BOOLEAN');
         } catch (e) {
             // If alter fails, log but don't crash dev server
             console.error('failed to ensure Trade columns:', e);
