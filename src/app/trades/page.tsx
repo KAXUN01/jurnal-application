@@ -21,6 +21,8 @@ import {
     AlertTriangle,
     Edit2,
     Trash2,
+    Image as ImageIcon,
+    ExternalLink,
 } from "lucide-react";
 
 // ─── Types ───────────────────────────────────────────────────────────
@@ -102,6 +104,26 @@ function StatBox({
 }
 
 function TradeDetail({ trade }: { trade: TradeEntry }) {
+    const screenshotLinks: { label: string; url: string }[] = [];
+    if (trade.beforeScreenshot) {
+        screenshotLinks.push({ label: "Before Trade", url: trade.beforeScreenshot });
+    }
+    if (trade.afterScreenshot) {
+        screenshotLinks.push({ label: "After Trade", url: trade.afterScreenshot });
+    }
+    if (trade.screenshots) {
+        try {
+            const parsed = typeof trade.screenshots === "string" ? JSON.parse(trade.screenshots) : trade.screenshots;
+            if (Array.isArray(parsed)) {
+                parsed.forEach((url, i) => {
+                    if (url && typeof url === "string" && !screenshotLinks.some((l) => l.url === url)) {
+                        screenshotLinks.push({ label: `Screenshot ${i + 1}`, url });
+                    }
+                });
+            }
+        } catch { /* ignore parse errors */ }
+    }
+
     return (
         <div className="px-4 py-4 bg-surface-900/50 border-t border-surface-500/10 animate-fade-in">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -195,6 +217,57 @@ function TradeDetail({ trade }: { trade: TradeEntry }) {
                         )}
                     </div>
                 </div>
+
+                {/* Screenshots */}
+                {screenshotLinks.length > 0 && (
+                    <div className="col-span-1 md:col-span-3 mt-4 pt-4 border-t border-surface-500/10 space-y-3 animate-fade-in">
+                        <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                            <ImageIcon className="h-3.5 w-3.5 text-neon-blue" />
+                            Screenshots
+                        </h4>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                            {screenshotLinks.map((link, idx) => (
+                                <div
+                                    key={idx}
+                                    className="group relative rounded-lg overflow-hidden border border-surface-500/20 bg-surface-800/40 hover:border-neon-blue/30 transition-all duration-300 flex flex-col"
+                                >
+                                    <a
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="relative aspect-video block overflow-hidden bg-black/25 flex-1"
+                                    >
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img
+                                            src={link.url}
+                                            alt={link.label}
+                                            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                                            onError={(e) => {
+                                                (e.target as HTMLElement).style.display = "none";
+                                            }}
+                                        />
+                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <ExternalLink className="h-5 w-5 text-white drop-shadow-md" />
+                                        </div>
+                                    </a>
+                                    <div className="px-3 py-2 border-t border-surface-500/15 flex items-center justify-between bg-surface-900/40">
+                                        <span className="text-[10px] font-mono text-gray-400 uppercase tracking-wider">
+                                            {link.label}
+                                        </span>
+                                        <a
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[10px] text-neon-blue hover:text-neon-blue-hover hover:underline flex items-center gap-1 font-medium font-mono"
+                                        >
+                                            View <ExternalLink className="h-2.5 w-2.5" />
+                                        </a>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
