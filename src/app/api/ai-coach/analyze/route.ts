@@ -18,10 +18,10 @@ export async function POST(request: Request) {
         const { dateRange, symbol, strategy, winLoss, session, analysisTarget } = body;
 
         // Fetch trades based on filters (Simplified for now, in a real app we'd apply all the filters)
-        // We'll just fetch 10 recent trades to give context to the AI (reduced from 20 to prevent timeouts)
+        // We'll just fetch 5 recent trades to minimize processing time for the 10s limit
         let trades = await prisma.trade.findMany({
             orderBy: { date: "desc" },
-            take: 10,
+            take: 5,
         });
 
         // Apply simple filters
@@ -29,27 +29,14 @@ export async function POST(request: Request) {
         if (strategy && strategy !== "all") trades = trades.filter(t => t.tradeType?.toLowerCase() === strategy.toLowerCase());
         if (winLoss && winLoss !== "all") trades = trades.filter(t => t.outcome?.toLowerCase() === winLoss.toLowerCase());
 
-        // Prepare context for AI
+        // Prepare minimal context for AI to reduce tokens and speed up inference
         const tradesContext = trades.map(t => ({
-            date: t.date,
-            time: t.time,
-            entryTime: t.entryExecutionTime,
             pair: t.pair,
-            direction: t.tradeDirection,
-            outcome: t.outcome,
-            pnl: t.profitLoss,
-            pnlPercent: t.profitLossPercent,
+            dir: t.tradeDirection,
+            out: t.outcome,
             rr: t.rrRatio,
-            type: t.tradeType,
-            entryPrice: t.entryPrice,
-            exitPrice: t.exitPrice,
-            stopLoss: t.stopLoss,
-            takeProfit: t.takeProfit,
-            duration: t.tradeDuration,
-            lotSize: t.lotSize,
-            rules: (t as Record<string, unknown>).followedRules ? "Followed" : (t as Record<string, unknown>).followedRules === false ? "Broken" : "Unknown",
-            notes: `${t.beforeTrade || ''} ${t.duringTrade || ''} ${t.afterTrade || ''} ${t.reasonForTrade || ''} ${t.goodBehavior || ''} ${t.badBehavior || ''}`.trim(),
-            mistakes: (t as Record<string, unknown>).mistakes
+            pnlPct: t.profitLossPercent,
+            notes: `${t.reasonForTrade || ''} ${t.mistakes || ''} ${t.badBehavior || ''}`.trim()
         }));
 
         // ─── Fetch the previous (latest) analysis for comparison context ───
@@ -57,29 +44,16 @@ export async function POST(request: Request) {
             orderBy: { createdAt: "desc" },
         });
 
-        let previousContext = "";
-        if (previousAnalysis) {
-            previousContext = `
-
-IMPORTANT: The user has a previous analysis from ${previousAnalysis.createdAt.toISOString()}.
-Previous quality scores: ${previousAnalysis.qualityScore}
-Previous executive summary: ${previousAnalysis.executiveSummary}
-Previous patterns: ${previousAnalysis.patterns}
-Previous improvement plan: ${previousAnalysis.improvementPlan}
-Previous psychology: ${previousAnalysis.psychology}
-Previous risk profile: ${previousAnalysis.risk}
-
-When generating the new analysis, keep in mind these previous results so you can provide context-aware insights. The comparison will be generated separately.
-`;
-        }
+        // We removed previousContext from the prompt to save tokens and inference time.
+        // The comparison is calculated manually below anyway.
 
         const systemPrompt = `
 You are an elite AI Trading Coach. Analyze the following trade history and provide a structured JSON response.
 Do NOT wrap the response in markdown blocks like \`\`\`json. Just return raw valid JSON.
 
-Here is the user's trade data context (up to 50 recent trades matching their filter: ${analysisTarget}):
+Here is the user's trade data context (up to 5 recent trades):
 ${JSON.stringify(tradesContext)}
-${previousContext}
+
 Analyze this data and return exactly this JSON structure:
 {
   "qualityScore": {
