@@ -4,8 +4,8 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-// Use Qwen 14B model by default which is fast and good with structured JSON
-const MODEL = process.env.LLM_MODEL || "qwen/qwen2.5-14b-instruct";
+// Chat responses are short, so 70B might finish within Netlify's 10s limit
+const MODEL = process.env.LLM_MODEL || "meta/llama-3.3-70b-instruct";
 
 export async function POST(request: Request) {
     try {

@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60 seconds for AI processing
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-// Use Qwen 14B model by default which is fast and good with structured JSON
-const MODEL = process.env.LLM_MODEL || "qwen/qwen2.5-14b-instruct";
+// Use Llama 3.1 8B model by default which is fast and supports NVIDIA NIM
+const MODEL = process.env.LLM_MODEL || "meta/llama-3.1-8b-instruct";
 
 export async function POST(request: Request) {
     try {
