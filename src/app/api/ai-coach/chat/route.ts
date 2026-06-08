@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-const MODEL = process.env.LLM_MODEL || "meta/llama-3.3-70b-instruct";
+// Use Qwen 14B model by default which is fast and good with structured JSON
+const MODEL = process.env.LLM_MODEL || "qwen/qwen2.5-14b-instruct";
 
 export async function POST(request: Request) {
     try {
@@ -16,9 +17,10 @@ export async function POST(request: Request) {
         const { message, history } = body;
 
         // Fetch recent trades to give the AI context about the user's trading history
+        // Reduced from 20 to 10 to prevent timeouts
         const trades = await prisma.trade.findMany({
             orderBy: { date: "desc" },
-            take: 20,
+            take: 10,
         });
 
         const tradesContext = trades.map(t => ({

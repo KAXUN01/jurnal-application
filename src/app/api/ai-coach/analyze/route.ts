@@ -5,7 +5,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60 seconds for AI processing
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-const MODEL = process.env.LLM_MODEL || "meta/llama-3.3-70b-instruct";
+// Use Qwen 14B model by default which is fast and good with structured JSON
+const MODEL = process.env.LLM_MODEL || "qwen/qwen2.5-14b-instruct";
 
 export async function POST(request: Request) {
     try {
@@ -17,10 +18,10 @@ export async function POST(request: Request) {
         const { dateRange, symbol, strategy, winLoss, session, analysisTarget } = body;
 
         // Fetch trades based on filters (Simplified for now, in a real app we'd apply all the filters)
-        // Here we'll just fetch recent trades to give context to the AI
+        // We'll just fetch 10 recent trades to give context to the AI (reduced from 20 to prevent timeouts)
         let trades = await prisma.trade.findMany({
             orderBy: { date: "desc" },
-            take: 20,
+            take: 10,
         });
 
         // Apply simple filters
