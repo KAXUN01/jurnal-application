@@ -143,8 +143,14 @@ export default function AICoachPage() {
             });
 
             if (!response.ok) {
-                const errData = await response.json();
-                throw new Error(errData.error || "Failed to analyze");
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || "Failed to analyze");
+                } else {
+                    const textData = await response.text();
+                    throw new Error(`Server error (${response.status}): ${textData.substring(0, 100)}...`);
+                }
             }
 
             const data = await response.json();
@@ -190,7 +196,16 @@ export default function AICoachPage() {
                 })
             });
 
-            if (!response.ok) throw new Error("Failed to get chat response");
+            if (!response.ok) {
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    const errData = await response.json();
+                    throw new Error(errData.error || "Failed to get chat response");
+                } else {
+                    const textData = await response.text();
+                    throw new Error(`Server error (${response.status}): ${textData.substring(0, 100)}...`);
+                }
+            }
 
             const data = await response.json();
             setChatMessages(prev => [...prev, { role: "assistant", content: data.response }]);
