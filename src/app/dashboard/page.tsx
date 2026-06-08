@@ -564,7 +564,7 @@ export default function DashboardPage() {
                         </Badge>
                     </div>
                     <div className="h-[300px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <AreaChart data={equityData} margin={{ top: 5, right: 10, left: -15, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="equityGrad" x1="0" y1="0" x2="0" y2="1">
@@ -610,7 +610,7 @@ export default function DashboardPage() {
                         Distribution
                     </h2>
                     <div className="h-48 lg:h-[220px] flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
                             <PieChart>
                                 <Pie
                                     data={winLossData.filter((d) => d.value > 0)}

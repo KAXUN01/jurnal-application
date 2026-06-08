@@ -214,89 +214,16 @@ Ensure the output is 100% valid JSON and nothing else.
 
             const overallDelta = newScores.total - prevScores.total;
 
-            // Ask AI to generate a comparison summary
-            const comparisonPrompt = `
-You are an elite AI Trading Coach. Compare the trader's previous analysis with their new analysis and provide improvement insights.
-Do NOT wrap the response in markdown blocks. Just return raw valid JSON.
-
-Previous analysis:
-- Quality Scores: ${previousAnalysis.qualityScore}
-- Executive Summary: ${previousAnalysis.executiveSummary}
-- Psychology: ${previousAnalysis.psychology}
-- Risk: ${previousAnalysis.risk}
-- Patterns: ${previousAnalysis.patterns}
-- Improvement Plan: ${previousAnalysis.improvementPlan}
-
-New analysis:
-- Quality Scores: ${JSON.stringify(parsedJson.qualityScore)}
-- Executive Summary: ${JSON.stringify(parsedJson.executiveSummary)}
-- Psychology: ${JSON.stringify(parsedJson.psychology)}
-- Risk: ${JSON.stringify(parsedJson.risk)}
-- Patterns: ${JSON.stringify(parsedJson.patterns)}
-- Improvement Plan: ${JSON.stringify(parsedJson.improvementPlan)}
-
-Score changes: ${JSON.stringify(scoreDeltas)}
-
-Return exactly this JSON:
-{
-  "summary": "A 2-3 sentence comparison summary describing the trader's progress.",
-  "improvements": ["Specific improvement 1", "Specific improvement 2"],
-  "regressions": ["Specific regression 1"],
-  "nextSteps": ["Next step 1 to keep improving", "Next step 2"]
-}
-
-If there are no improvements or regressions, return empty arrays for those fields.
-Ensure the output is 100% valid JSON and nothing else.
-`;
-
-            try {
-                const compResponse = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${NVIDIA_NIM_API_KEY}`,
-                        "Content-Type": "application/json"
-                    },
-                    body: JSON.stringify({
-                        model: MODEL,
-                        messages: [
-                            { role: "system", content: comparisonPrompt },
-                            { role: "user", content: "Generate the comparison JSON." }
-                        ],
-                        response_format: { type: "json_object" }
-                    })
-                });
-
-                if (compResponse.ok) {
-                    const compData = await compResponse.json();
-                    const compContent = compData.choices[0].message.content;
-                    const compJsonStart = compContent.indexOf('{');
-                    const compJsonEnd = compContent.lastIndexOf('}');
-                    if (compJsonStart !== -1 && compJsonEnd !== -1) {
-                        const compParsed = JSON.parse(compContent.substring(compJsonStart, compJsonEnd + 1));
-                        comparison = {
-                            scoreDeltas,
-                            overallDelta,
-                            summary: compParsed.summary || "",
-                            improvements: compParsed.improvements || [],
-                            regressions: compParsed.regressions || [],
-                            nextSteps: compParsed.nextSteps || [],
-                            previousDate: previousAnalysis.createdAt.toISOString(),
-                        };
-                    }
-                }
-            } catch (compError) {
-                console.error("Comparison generation failed (non-fatal):", compError);
-                // Still return the analysis even if comparison fails
-                comparison = {
-                    scoreDeltas,
-                    overallDelta,
-                    summary: `Your overall score changed by ${overallDelta > 0 ? '+' : ''}${overallDelta} points since your last analysis.`,
-                    improvements: scoreDeltas.filter(d => d.delta > 0).map(d => `${d.category} improved by +${d.delta} points`),
-                    regressions: scoreDeltas.filter(d => d.delta < 0).map(d => `${d.category} dropped by ${d.delta} points`),
-                    nextSteps: ["Continue focusing on areas that showed regression"],
-                    previousDate: previousAnalysis.createdAt.toISOString(),
-                };
-            }
+            // Generate deterministic comparison to prevent Netlify 10s timeout
+            comparison = {
+                scoreDeltas,
+                overallDelta,
+                summary: `Your overall score changed by ${overallDelta > 0 ? '+' : ''}${overallDelta} points since your last analysis.`,
+                improvements: scoreDeltas.filter(d => d.delta > 0).map(d => `${d.category} improved by +${d.delta} points`),
+                regressions: scoreDeltas.filter(d => d.delta < 0).map(d => `${d.category} dropped by ${Math.abs(d.delta)} points`),
+                nextSteps: ["Continue focusing on areas that showed regression"],
+                previousDate: previousAnalysis.createdAt.toISOString(),
+            };
         }
 
         return NextResponse.json({
