@@ -5,8 +5,8 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60 seconds for AI processing
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-// Use Llama 3.1 8B model by default which is fast and supports NVIDIA NIM
-const MODEL = process.env.LLM_MODEL || "meta/llama-3.1-8b-instruct";
+// Force Llama 3.1 8B model to prevent 10s timeouts on Netlify. (Ignores process.env.LLM_MODEL to guarantee safety)
+const MODEL = "meta/llama-3.1-8b-instruct";
 
 export async function POST(request: Request) {
     try {

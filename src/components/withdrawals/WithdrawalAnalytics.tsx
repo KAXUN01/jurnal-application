@@ -88,7 +88,7 @@ export function WithdrawalAnalytics({ transactions }: WithdrawalAnalyticsProps) 
         </CardHeader>
         <CardContent>
           <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0}>
               <LineChart data={monthlyData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis dataKey="month" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
@@ -115,7 +115,7 @@ export function WithdrawalAnalytics({ transactions }: WithdrawalAnalyticsProps) 
         </CardHeader>
         <CardContent>
           <div className="h-[250px] w-full">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0}>
               <BarChart data={accountData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                 <XAxis dataKey="name" stroke="#9CA3AF" tick={{ fill: '#9CA3AF', fontSize: 12 }} />
@@ -135,7 +135,7 @@ export function WithdrawalAnalytics({ transactions }: WithdrawalAnalyticsProps) 
         </CardHeader>
         <CardContent>
           <div className="h-[250px] w-full flex items-center justify-center">
-            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
+            <ResponsiveContainer width="99%" height="100%" minWidth={0} minHeight={0}>
               <PieChart>
                 <Pie
                   data={methodData}
