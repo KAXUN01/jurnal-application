@@ -36,7 +36,7 @@ export async function POST(request: Request) {
             out: t.outcome,
             rr: t.rrRatio,
             pnlPct: t.profitLossPercent,
-            notes: `${t.reasonForTrade || ''} ${t.mistakes || ''} ${t.badBehavior || ''}`.trim()
+            notes: `${t.reasonForTrade || ''} ${t.badBehavior || ''}`.trim()
         }));
 
         // ─── Fetch the previous (latest) analysis for comparison context ───
