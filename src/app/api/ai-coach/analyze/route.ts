@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
+export const maxDuration = 60; // Allow up to 60 seconds for AI processing
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
 const MODEL = process.env.LLM_MODEL || "meta/llama-3.3-70b-instruct";
@@ -19,7 +20,7 @@ export async function POST(request: Request) {
         // Here we'll just fetch recent trades to give context to the AI
         let trades = await prisma.trade.findMany({
             orderBy: { date: "desc" },
-            take: 50,
+            take: 20,
         });
 
         // Apply simple filters
