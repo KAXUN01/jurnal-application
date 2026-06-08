@@ -44,7 +44,7 @@ export function DailySummaryCalendar({ trades }: DailySummaryCalendarProps) {
             
             data[dateStr].count += 1;
             
-            const amount = parseFloat(trade.profitLoss) || 0;
+            const amount = Math.abs(parseFloat(trade.profitLoss) || 0);
             if (trade.outcome === "Loss") {
                 data[dateStr].pnl -= amount;
             } else if (trade.outcome === "Win") {

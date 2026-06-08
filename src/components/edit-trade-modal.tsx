@@ -28,6 +28,9 @@ interface TradeEntry {
     beforeTrade?: string;
     duringTrade?: string;
     afterTrade?: string;
+    reasonForTrade?: string;
+    goodBehavior?: string;
+    badBehavior?: string;
     beforeScreenshot?: string;
     afterScreenshot?: string;
     screenshots?: string;
@@ -260,6 +263,21 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
                         <div>
                             <FieldLabel>After Trade</FieldLabel>
                             <Textarea value={form.afterTrade || ""} onChange={(e) => set("afterTrade", e.target.value)} placeholder="Lessons learned" className="min-h-[110px]" />
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 pt-4 border-t border-surface-500/20">
+                            <div>
+                                <FieldLabel>Reason For Trade (Why I took it)</FieldLabel>
+                                <Textarea value={form.reasonForTrade || ""} onChange={(e) => set("reasonForTrade", e.target.value)} placeholder="What was your conviction or edge for taking this trade?" />
+                            </div>
+                            <div>
+                                <FieldLabel>Good Behavior</FieldLabel>
+                                <Textarea value={form.goodBehavior || ""} onChange={(e) => set("goodBehavior", e.target.value)} placeholder="What did you do well? (e.g. Followed rules, let winner run)" />
+                            </div>
+                            <div>
+                                <FieldLabel>Bad Behavior</FieldLabel>
+                                <Textarea value={form.badBehavior || ""} onChange={(e) => set("badBehavior", e.target.value)} placeholder="What mistakes did you make? (e.g. FOMO, moved stop loss)" />
+                            </div>
                         </div>
 
                         {/* Before/After Screenshot URL inputs removed per request */}

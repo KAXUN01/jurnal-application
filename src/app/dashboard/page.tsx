@@ -241,7 +241,7 @@ export default function DashboardPage() {
         const currentYear = now.getFullYear();
 
         trades.forEach(t => {
-            const amount = parseFloat(t.profitLoss) || 0;
+            const amount = Math.abs(parseFloat(t.profitLoss) || 0);
             
             if (t.outcome === "Win") {
                 grossProfit += amount;
@@ -316,7 +316,7 @@ export default function DashboardPage() {
     const equityData = useMemo(() => {
         let cumulative = 0;
         return trades.map((t) => {
-            const amount = parseFloat(t.profitLoss) || 0;
+            const amount = Math.abs(parseFloat(t.profitLoss) || 0);
             if (t.outcome === "Loss") cumulative -= amount;
             else if (t.outcome === "Win") cumulative += amount;
             
@@ -343,7 +343,7 @@ export default function DashboardPage() {
             if (t.tradeType === "—") return;
             if (!types[t.tradeType]) types[t.tradeType] = { wins: 0, total: 0, pnl: 0 };
             types[t.tradeType].total++;
-            const amount = parseFloat(t.profitLoss) || 0;
+            const amount = Math.abs(parseFloat(t.profitLoss) || 0);
             if (t.outcome === "Loss") types[t.tradeType].pnl -= amount;
             else if (t.outcome === "Win") types[t.tradeType].pnl += amount;
             if (t.outcome === "Win") types[t.tradeType].wins++;
@@ -365,7 +365,7 @@ export default function DashboardPage() {
             if (t.pair === "—") return;
             if (!pairs[t.pair]) pairs[t.pair] = { wins: 0, total: 0, pnl: 0 };
             pairs[t.pair].total++;
-            const amount = parseFloat(t.profitLoss) || 0;
+            const amount = Math.abs(parseFloat(t.profitLoss) || 0);
             if (t.outcome === "Loss") pairs[t.pair].pnl -= amount;
             else if (t.outcome === "Win") pairs[t.pair].pnl += amount;
             if (t.outcome === "Win") pairs[t.pair].wins++;

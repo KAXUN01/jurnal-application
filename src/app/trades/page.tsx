@@ -47,6 +47,9 @@ interface TradeEntry {
     beforeTrade?: string;
     duringTrade?: string;
     afterTrade?: string;
+    reasonForTrade?: string;
+    goodBehavior?: string;
+    badBehavior?: string;
     beforeScreenshot?: string;
     afterScreenshot?: string;
     screenshots?: string;
@@ -218,6 +221,43 @@ function TradeDetail({ trade }: { trade: TradeEntry }) {
                     </div>
                 </div>
 
+                {/* Special Notes */}
+                <div className="space-y-3">
+                    <h4 className="text-xs font-semibold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                        <Target className="h-3.5 w-3.5 text-neon-green" />
+                        Special Notes
+                    </h4>
+                    <div className="space-y-3">
+                        {trade.reasonForTrade && (
+                            <div>
+                                <span className="text-[10px] uppercase tracking-widest text-gray-500 font-mono block mb-1">Reason For Trade</span>
+                                <p className="text-xs text-gray-400 bg-surface-800/60 rounded-lg px-3 py-2 border border-surface-500/15 leading-relaxed">
+                                    {trade.reasonForTrade}
+                                </p>
+                            </div>
+                        )}
+                        {trade.goodBehavior && (
+                            <div>
+                                <span className="text-[10px] uppercase tracking-widest text-emerald-500/70 font-mono block mb-1">Good Behavior</span>
+                                <p className="text-xs text-gray-400 bg-emerald-900/10 rounded-lg px-3 py-2 border border-emerald-500/15 leading-relaxed">
+                                    {trade.goodBehavior}
+                                </p>
+                            </div>
+                        )}
+                        {trade.badBehavior && (
+                            <div>
+                                <span className="text-[10px] uppercase tracking-widest text-red-500/70 font-mono block mb-1">Bad Behavior</span>
+                                <p className="text-xs text-gray-400 bg-red-900/10 rounded-lg px-3 py-2 border border-red-500/15 leading-relaxed">
+                                    {trade.badBehavior}
+                                </p>
+                            </div>
+                        )}
+                        {!trade.reasonForTrade && !trade.goodBehavior && !trade.badBehavior && (
+                            <p className="text-xs text-gray-600 italic">No special notes recorded</p>
+                        )}
+                    </div>
+                </div>
+
                 {/* Screenshots */}
                 {screenshotLinks.length > 0 && (
                     <div className="col-span-1 md:col-span-3 mt-4 pt-4 border-t border-surface-500/10 space-y-3 animate-fade-in">
@@ -303,7 +343,7 @@ function DetailRow({
                         ? "text-emerald-400"
                         : String(value) === "Loss"
                             ? "text-red-400"
-                            : String(value) === "Breakeven"
+                            : String(value) === "BE"
                                 ? "text-yellow-400"
                                 : "text-gray-400"
                     }`}
@@ -443,6 +483,9 @@ export default function TradesPage() {
                     beforeTrade: t.beforeTrade || "",
                     duringTrade: t.duringTrade || "",
                     afterTrade: t.afterTrade || "",
+                    reasonForTrade: t.reasonForTrade || "",
+                    goodBehavior: t.goodBehavior || "",
+                    badBehavior: t.badBehavior || "",
                     beforeScreenshot: t.beforeScreenshot || "",
                     afterScreenshot: t.afterScreenshot || "",
                     screenshots: t.screenshots || "",
@@ -572,7 +615,7 @@ export default function TradesPage() {
     const losses = filtered.filter((t) => t.outcome === "Loss").length;
     const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : "0";
     const totalPnl = filtered.reduce((sum, t) => {
-        const amount = parseFloat(t.profitLoss) || 0;
+        const amount = Math.abs(parseFloat(t.profitLoss) || 0);
         if (t.outcome === "Loss") {
             return sum - amount;
         }

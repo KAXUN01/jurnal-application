@@ -66,6 +66,9 @@ export async function PUT(
                 afterScreenshot: body.afterScreenshot || null,
                 screenshots: JSON.stringify(body.screenshots || []),
                 tags: JSON.stringify(body.tags || []),
+                reasonForTrade: body.reasonForTrade || null,
+                goodBehavior: body.goodBehavior || null,
+                badBehavior: body.badBehavior || null,
             },
         });
 

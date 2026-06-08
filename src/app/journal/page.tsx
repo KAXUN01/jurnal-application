@@ -44,6 +44,9 @@ export default function JournalPage() {
         beforeTrade: "",
         duringTrade: "",
         afterTrade: "",
+        reasonForTrade: "",
+        goodBehavior: "",
+        badBehavior: "",
         beforeScreenshot: "",
         afterScreenshot: "",
         screenshots: [] as string[],
@@ -239,7 +242,7 @@ export default function JournalPage() {
                                 <option value="">Select...</option>
                                 <option value="Win">Win</option>
                                 <option value="Loss">Loss</option>
-                                <option value="Breakeven">Breakeven</option>
+                                <option value="BE">Breakeven</option>
                             </Select>
                         </div>
                         <div>
@@ -263,7 +266,7 @@ export default function JournalPage() {
                         <div className={`text-sm font-semibold ${
                             form.outcome === "Win" ? "text-emerald-400" : 
                             form.outcome === "Loss" ? "text-red-400" : 
-                            form.outcome === "Breakeven" ? "text-yellow-400" : "text-gray-400"
+                            form.outcome === "BE" ? "text-yellow-400" : "text-gray-400"
                         }`}>
                             {form.outcome || "—"} {form.profitLoss ? `(${form.profitLoss})` : ""}
                         </div>
@@ -288,6 +291,28 @@ export default function JournalPage() {
                         <div>
                             <FieldLabel>After Trade</FieldLabel>
                             <Textarea value={form.afterTrade} onChange={(e) => set("afterTrade", e.target.value)} />
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Special Notes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 gap-4">
+                        <div>
+                            <FieldLabel>Reason For Trade (Why I took it)</FieldLabel>
+                            <Textarea value={form.reasonForTrade} onChange={(e) => set("reasonForTrade", e.target.value)} placeholder="What was your conviction or edge for taking this trade?" />
+                        </div>
+                        <div>
+                            <FieldLabel>Good Behavior</FieldLabel>
+                            <Textarea value={form.goodBehavior} onChange={(e) => set("goodBehavior", e.target.value)} placeholder="What did you do well? (e.g. Followed rules, let winner run)" />
+                        </div>
+                        <div>
+                            <FieldLabel>Bad Behavior</FieldLabel>
+                            <Textarea value={form.badBehavior} onChange={(e) => set("badBehavior", e.target.value)} placeholder="What mistakes did you make? (e.g. FOMO, moved stop loss)" />
                         </div>
                     </div>
                 </CardContent>

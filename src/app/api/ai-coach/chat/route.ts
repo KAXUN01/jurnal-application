@@ -38,7 +38,7 @@ export async function POST(request: Request) {
             takeProfit: t.takeProfit,
             duration: t.tradeDuration,
             lotSize: t.lotSize,
-            notes: `${t.beforeTrade} ${t.duringTrade} ${t.afterTrade}`.trim()
+            notes: `${t.beforeTrade || ''} ${t.duringTrade || ''} ${t.afterTrade || ''} ${t.reasonForTrade || ''} ${t.goodBehavior || ''} ${t.badBehavior || ''}`.trim()
         }));
 
         const systemPrompt = `

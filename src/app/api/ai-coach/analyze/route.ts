@@ -46,7 +46,7 @@ export async function POST(request: Request) {
             duration: t.tradeDuration,
             lotSize: t.lotSize,
             rules: (t as Record<string, unknown>).followedRules ? "Followed" : (t as Record<string, unknown>).followedRules === false ? "Broken" : "Unknown",
-            notes: `${t.beforeTrade} ${t.duringTrade} ${t.afterTrade}`.trim(),
+            notes: `${t.beforeTrade || ''} ${t.duringTrade || ''} ${t.afterTrade || ''} ${t.reasonForTrade || ''} ${t.goodBehavior || ''} ${t.badBehavior || ''}`.trim(),
             mistakes: (t as Record<string, unknown>).mistakes
         }));
 

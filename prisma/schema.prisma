@@ -38,6 +38,9 @@ model Trade {
   screenshots       String? // JSON stringified array of strings
   tags              String? // JSON stringified array of tags
   followedRules     Boolean?
+  reasonForTrade    String?
+  goodBehavior      String?
+  badBehavior       String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
