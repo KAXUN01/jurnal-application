@@ -144,6 +144,7 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
                                     <option value="">Select pair...</option>
                                     <option value="EURUSD">EURUSD</option>
                                     <option value="GBPUSD">GBPUSD</option>
+                                    <option value="AUDUSD">AUDUSD</option>
                                     <option value="USDJPY">USDJPY</option>
                                     <option value="XAUUSD">XAUUSD</option>
                                     <option value="BTCUSD">BTCUSD</option>
