@@ -222,7 +222,8 @@ export default function DashboardPage() {
         const losses = trades.filter((t) => t.outcome === "Loss").length;
         const be = trades.filter((t) => t.outcome === "BE").length;
         
-        const winRate = total > 0 ? (wins / total) * 100 : 0;
+        const validTrades = wins + losses;
+        const winRate = validTrades > 0 ? (wins / validTrades) * 100 : 0;
         
         let grossProfit = 0;
         let grossLoss = 0;
@@ -287,9 +288,15 @@ export default function DashboardPage() {
         const followedTrades = trades.filter((t) => t.followedRules === true);
         const brokenTrades = trades.filter((t) => t.followedRules === false);
         const followedWins = followedTrades.filter((t) => t.outcome === "Win").length;
+        const followedLosses = followedTrades.filter((t) => t.outcome === "Loss").length;
         const brokenWins = brokenTrades.filter((t) => t.outcome === "Win").length;
-        const followedWinRate = followedTrades.length > 0 ? (followedWins / followedTrades.length) * 100 : 0;
-        const brokenWinRate = brokenTrades.length > 0 ? (brokenWins / brokenTrades.length) * 100 : 0;
+        const brokenLosses = brokenTrades.filter((t) => t.outcome === "Loss").length;
+        
+        const followedValid = followedWins + followedLosses;
+        const brokenValid = brokenWins + brokenLosses;
+        
+        const followedWinRate = followedValid > 0 ? (followedWins / followedValid) * 100 : 0;
+        const brokenWinRate = brokenValid > 0 ? (brokenWins / brokenValid) * 100 : 0;
 
         const fullConf = trades.filter(
             (t) => t.poiTapped === true && t.chochConfirmed === true
@@ -338,20 +345,26 @@ export default function DashboardPage() {
 
     // ─── Trade Type Performance ───────────────────────────────────────
     const tradeTypePerf = useMemo(() => {
-        const types: Record<string, { wins: number; total: number; pnl: number }> = {};
+        const types: Record<string, { wins: number; total: number; pnl: number, validTrades: number }> = {};
         trades.forEach((t) => {
             if (t.tradeType === "—") return;
-            if (!types[t.tradeType]) types[t.tradeType] = { wins: 0, total: 0, pnl: 0 };
+            if (!types[t.tradeType]) types[t.tradeType] = { wins: 0, total: 0, pnl: 0, validTrades: 0 };
             types[t.tradeType].total++;
             const amount = Math.abs(parseFloat(t.profitLoss) || 0);
-            if (t.outcome === "Loss") types[t.tradeType].pnl -= amount;
-            else if (t.outcome === "Win") types[t.tradeType].pnl += amount;
-            if (t.outcome === "Win") types[t.tradeType].wins++;
+            if (t.outcome === "Loss") {
+                types[t.tradeType].pnl -= amount;
+                types[t.tradeType].validTrades++;
+            }
+            else if (t.outcome === "Win") {
+                types[t.tradeType].pnl += amount;
+                types[t.tradeType].wins++;
+                types[t.tradeType].validTrades++;
+            }
         });
         return Object.entries(types)
             .map(([name, data]) => ({
                 name,
-                winRate: data.total > 0 ? parseFloat(((data.wins / data.total) * 100).toFixed(1)) : 0,
+                winRate: data.validTrades > 0 ? parseFloat(((data.wins / data.validTrades) * 100).toFixed(1)) : 0,
                 pnl: parseFloat(data.pnl.toFixed(1)),
                 trades: data.total,
             }))
@@ -360,20 +373,26 @@ export default function DashboardPage() {
 
     // ─── Pair Performance ─────────────────────────────────────────────
     const pairPerf = useMemo(() => {
-        const pairs: Record<string, { wins: number; total: number; pnl: number }> = {};
+        const pairs: Record<string, { wins: number; total: number; pnl: number, validTrades: number }> = {};
         trades.forEach((t) => {
             if (t.pair === "—") return;
-            if (!pairs[t.pair]) pairs[t.pair] = { wins: 0, total: 0, pnl: 0 };
+            if (!pairs[t.pair]) pairs[t.pair] = { wins: 0, total: 0, pnl: 0, validTrades: 0 };
             pairs[t.pair].total++;
             const amount = Math.abs(parseFloat(t.profitLoss) || 0);
-            if (t.outcome === "Loss") pairs[t.pair].pnl -= amount;
-            else if (t.outcome === "Win") pairs[t.pair].pnl += amount;
-            if (t.outcome === "Win") pairs[t.pair].wins++;
+            if (t.outcome === "Loss") {
+                pairs[t.pair].pnl -= amount;
+                pairs[t.pair].validTrades++;
+            }
+            else if (t.outcome === "Win") {
+                pairs[t.pair].pnl += amount;
+                pairs[t.pair].wins++;
+                pairs[t.pair].validTrades++;
+            }
         });
         return Object.entries(pairs)
             .map(([name, data]) => ({
                 name,
-                winRate: data.total > 0 ? parseFloat(((data.wins / data.total) * 100).toFixed(1)) : 0,
+                winRate: data.validTrades > 0 ? parseFloat(((data.wins / data.validTrades) * 100).toFixed(1)) : 0,
                 pnl: parseFloat(data.pnl.toFixed(1)),
                 trades: data.total,
             }))

@@ -613,7 +613,8 @@ export default function TradesPage() {
     const totalTrades = filtered.length;
     const wins = filtered.filter((t) => t.outcome === "Win").length;
     const losses = filtered.filter((t) => t.outcome === "Loss").length;
-    const winRate = totalTrades > 0 ? ((wins / totalTrades) * 100).toFixed(1) : "0";
+    const validTrades = wins + losses;
+    const winRate = validTrades > 0 ? ((wins / validTrades) * 100).toFixed(1) : "0";
     const totalPnl = filtered.reduce((sum, t) => {
         const amount = Math.abs(parseFloat(t.profitLoss) || 0);
         if (t.outcome === "Loss") {

@@ -162,8 +162,10 @@ export default function GoalsPage() {
         // Trades analysis
         const totalTrades = trades.length;
         const wins = trades.filter(t => t.outcome === "Win").length;
+        const losses = trades.filter(t => t.outcome === "Loss").length;
         const totalPnl = trades.reduce((sum, t) => sum + (t.outcome === 'Loss' ? -(Math.abs(parseFloat(t.profitLoss)||0)) : (Math.abs(parseFloat(t.profitLoss)||0))), 0);
-        const winRate = totalTrades > 0 ? (wins / totalTrades) * 100 : 0;
+        const validTrades = wins + losses;
+        const winRate = validTrades > 0 ? (wins / validTrades) * 100 : 0;
         
         // Rule adherence
         const rulesAnswered = trades.filter(t => t.followedRules !== null).length;
