@@ -40,6 +40,7 @@ const FOREX_PAIRS: ForexPair[] = [
     { symbol: "AUDJPY", label: "AUD/JPY", journalKey: "AJ", pipStep: 0.01, pipValuePerLot: 6.67, isJpy: true },
     { symbol: "XAUUSD", label: "XAU/USD", journalKey: "XAUUSD", pipStep: 0.01, pipValuePerLot: 1, isJpy: false },
     { symbol: "US30", label: "US30", journalKey: "US30", pipStep: 1, pipValuePerLot: 1, isJpy: false },
+    { symbol: "NASDAQ", label: "NASDAQ", journalKey: "NASDAQ", pipStep: 1, pipValuePerLot: 1, isJpy: false },
 ];
 
 // ─── Props ───────────────────────────────────────────────────────────
