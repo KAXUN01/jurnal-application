@@ -269,6 +269,7 @@ export default function AICoachPage() {
                                     <option value="EURUSD">EURUSD</option>
                                     <option value="GBPUSD">GBPUSD</option>
                                     <option value="AUDUSD">AUDUSD</option>
+                                    <option value="US500">US500</option>
                                 </Select>
                             </div>
 
