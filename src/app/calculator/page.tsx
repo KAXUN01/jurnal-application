@@ -43,6 +43,7 @@ const FOREX_PAIRS: ForexPair[] = [
     { symbol: "US30", label: "US30", pipStep: 1, pipValuePerLot: 1, isJpy: false },
     { symbol: "NASDAQ", label: "NASDAQ", pipStep: 1, pipValuePerLot: 1, isJpy: false },
     { symbol: "US500", label: "US500", pipStep: 1, pipValuePerLot: 1, isJpy: false },
+    { symbol: "UK100", label: "UK100", pipStep: 1, pipValuePerLot: 1, isJpy: false },
 ];
 
 // ─── Input Field Component ──────────────────────────────────────────
@@ -253,7 +254,7 @@ export default function CalculatorPage() {
                                     className={`px-3 py-2 rounded-lg text-xs font-bold font-mono transition-all duration-200 border ${selectedPair === p.symbol
                                         ? p.isJpy
                                             ? "bg-neon-red/10 text-neon-red border-neon-red/25 shadow-[0_0_12px_rgba(255,59,92,0.08)]"
-                                            : (p.symbol === "XAUUSD" || p.symbol === "US30" || p.symbol === "US500")
+                                            : (p.symbol === "XAUUSD" || p.symbol === "US30" || p.symbol === "US500" || p.symbol === "UK100")
                                                 ? "bg-neon-yellow/10 text-neon-yellow border-neon-yellow/25 shadow-[0_0_12px_rgba(251,191,36,0.08)]"
                                                 : "bg-neon-green/10 text-neon-green border-neon-green/25 shadow-[0_0_12px_rgba(0,255,136,0.08)]"
                                         : "text-gray-500 border-surface-500/20 hover:text-gray-300 hover:border-surface-500/40"
@@ -282,6 +283,9 @@ export default function CalculatorPage() {
                             )}
                             {pair.symbol === "US500" && (
                                 <span className="text-[10px] font-mono text-neon-yellow/70">US500 (S&P 500)</span>
+                            )}
+                            {pair.symbol === "UK100" && (
+                                <span className="text-[10px] font-mono text-neon-yellow/70">UK100 (FTSE 100)</span>
                             )}
                         </div>
                     </div>
@@ -339,14 +343,14 @@ export default function CalculatorPage() {
                             icon={TrendingUp}
                             value={entry}
                             onChange={setEntry}
-                            placeholder={pair.isJpy ? "150.500" : pair.symbol === "XAUUSD" ? "2350.00" : (pair.symbol === "US30" || pair.symbol === "US500") ? "5500" : "1.0850"}
+                            placeholder={pair.isJpy ? "150.500" : pair.symbol === "XAUUSD" ? "2350.00" : (pair.symbol === "US30" || pair.symbol === "US500" || pair.symbol === "UK100") ? "5500" : "1.0850"}
                         />
                         <InputField
                             label="Stop Loss"
                             icon={ShieldX}
                             value={stopLoss}
                             onChange={setStopLoss}
-                            placeholder={pair.isJpy ? "150.000" : pair.symbol === "XAUUSD" ? "2340.00" : (pair.symbol === "US30" || pair.symbol === "US500") ? "5450" : "1.0800"}
+                            placeholder={pair.isJpy ? "150.000" : pair.symbol === "XAUUSD" ? "2340.00" : (pair.symbol === "US30" || pair.symbol === "US500" || pair.symbol === "UK100") ? "5450" : "1.0800"}
                         />
                     </div>
                 </CardContent>

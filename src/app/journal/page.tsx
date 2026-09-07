@@ -158,6 +158,7 @@ export default function JournalPage() {
                                 <option value="BTCUSD">BTCUSD</option>
                                 <option value="NASDAQ">NASDAQ</option>
                                 <option value="US500">US500</option>
+                                <option value="UK100">UK100</option>
                             </Select>
                         </div>
                         <div>

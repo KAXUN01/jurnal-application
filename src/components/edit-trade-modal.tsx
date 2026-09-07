@@ -149,6 +149,7 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
                                     <option value="XAUUSD">XAUUSD</option>
                                     <option value="BTCUSD">BTCUSD</option>
                                     <option value="US500">US500</option>
+                                    <option value="UK100">UK100</option>
                                 </Select>
                             </div>
                             <div>
