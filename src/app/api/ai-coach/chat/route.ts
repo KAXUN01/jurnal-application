@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-const MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
+const MODEL = "nvidia/nemotron-3-super-120b-a12b";
 
 export async function POST(request: Request) {
     try {

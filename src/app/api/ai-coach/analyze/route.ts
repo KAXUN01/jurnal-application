@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60 seconds for AI processing
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-const MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
+const MODEL = "nvidia/nemotron-3-super-120b-a12b";
 
 export async function POST(request: Request) {
     try {
@@ -128,18 +128,41 @@ Ensure the output is 100% valid JSON and nothing else.
         }
 
         const data = await response.json();
-        const content = data.choices[0].message.content;
+        const rawContent = data.choices[0].message.content;
         
-        // Extract JSON using regex or substring to avoid markdown/text wrappers
-        const jsonStart = content.indexOf('{');
-        const jsonEnd = content.lastIndexOf('}');
+        // Reasoning models may embed thinking text around the JSON.
+        // Strategy: find the largest valid JSON object in the content.
+        let parsedJson;
+        const content = rawContent.replace(/```json\s*/g, '').replace(/```\s*/g, '');
         
-        if (jsonStart === -1 || jsonEnd === -1) {
-            throw new Error("No JSON object found in the AI response.");
+        // Try parsing the entire content first (ideal case)
+        try {
+            parsedJson = JSON.parse(content.trim());
+        } catch {
+            // Find all potential JSON objects by matching balanced braces
+            const jsonStart = content.indexOf('{');
+            if (jsonStart === -1) {
+                throw new Error("No JSON object found in the AI response.");
+            }
+            
+            // Walk through to find the matching closing brace
+            let depth = 0;
+            let bestEnd = -1;
+            for (let i = jsonStart; i < content.length; i++) {
+                if (content[i] === '{') depth++;
+                else if (content[i] === '}') {
+                    depth--;
+                    if (depth === 0) { bestEnd = i; break; }
+                }
+            }
+            
+            if (bestEnd === -1) {
+                throw new Error("No complete JSON object found in the AI response.");
+            }
+            
+            const jsonString = content.substring(jsonStart, bestEnd + 1);
+            parsedJson = JSON.parse(jsonString);
         }
-        
-        const jsonString = content.substring(jsonStart, jsonEnd + 1);
-        const parsedJson = JSON.parse(jsonString);
 
         // ─── Save the analysis to DB ───────────────────────────────────
         const savedAnalysis = await prisma.aiAnalysis.create({
