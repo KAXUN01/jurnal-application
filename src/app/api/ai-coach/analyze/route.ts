@@ -5,8 +5,7 @@ export const dynamic = "force-dynamic";
 export const maxDuration = 60; // Allow up to 60 seconds for AI processing
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-// Use LLM_MODEL env var, falling back to Nemotron 3.5 Lightning (previous models reached EOL)
-const MODEL = process.env.LLM_MODEL || "nvidia/nemotron-3.5-lightning-30b-a3b";
+const MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
 
 export async function POST(request: Request) {
     try {

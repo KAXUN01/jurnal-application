@@ -4,8 +4,7 @@ import { prisma } from "@/lib/prisma";
 export const dynamic = "force-dynamic";
 
 const NVIDIA_NIM_API_KEY = process.env.NVIDIA_NIM_API_KEY;
-// Chat responses are short; Nemotron 3.5 Lightning is a fast MoE model within Netlify's timeout
-const MODEL = process.env.LLM_MODEL || "nvidia/nemotron-3.5-lightning-30b-a3b";
+const MODEL = "nvidia/nemotron-3.5-lightning-30b-a3b";
 
 export async function POST(request: Request) {
     try {
