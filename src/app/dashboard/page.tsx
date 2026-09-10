@@ -780,13 +780,17 @@ export default function DashboardPage() {
                                     radius={[6, 6, 0, 0]}
                                     animationDuration={1500}
                                     animationEasing="ease-out"
-                                    label={({ x, y, width, index }: { x: number; y: number; width: number; index: number }) => {
+                                    label={(props: any) => {
+                                        const x = Number(props.x) || 0;
+                                        const y = Number(props.y) || 0;
+                                        const w = Number(props.width) || 0;
+                                        const index = Number(props.index) || 0;
                                         const entry = monthlyData[index];
                                         if (!entry || entry.trades === 0) return null;
                                         const isPositive = entry.totalRR >= 0;
                                         return (
                                             <text
-                                                x={x + width / 2}
+                                                x={x + w / 2}
                                                 y={isPositive ? y - 6 : y + 14}
                                                 textAnchor="middle"
                                                 fontSize={9}
