@@ -780,7 +780,7 @@ export default function DashboardPage() {
                                     radius={[6, 6, 0, 0]}
                                     animationDuration={1500}
                                     animationEasing="ease-out"
-                                    label={(props: any) => {
+                                    label={(props: { x?: string | number; y?: string | number; width?: string | number; index?: string | number }) => {
                                         const x = Number(props.x) || 0;
                                         const y = Number(props.y) || 0;
                                         const w = Number(props.width) || 0;
