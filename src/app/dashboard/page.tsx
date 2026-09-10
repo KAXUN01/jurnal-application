@@ -23,6 +23,8 @@ import {
     PieChart,
     Pie,
     Cell,
+    BarChart,
+    Bar,
     XAxis,
     YAxis,
     Tooltip,
@@ -179,6 +181,7 @@ function KPICard({
 export default function DashboardPage() {
     const [trades, setTrades] = useState<TradeEntry[]>([]);
     const [loaded, setLoaded] = useState(false);
+    const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
     // Load trades from API
     useEffect(() => {
@@ -398,6 +401,45 @@ export default function DashboardPage() {
             }))
             .sort((a, b) => b.pnl - a.pnl);
     }, [trades]);
+
+    // ─── Available Years ───────────────────────────────────────────────
+    const availableYears = useMemo(() => {
+        const years = new Set<number>();
+        trades.forEach((t) => {
+            if (!t.date || t.date === "—") return;
+            const d = new Date(t.date);
+            if (!isNaN(d.getTime())) years.add(d.getFullYear());
+        });
+        return Array.from(years).sort((a, b) => b - a);
+    }, [trades]);
+
+    // ─── Monthly RR & Trades Data (filtered by year) ─────────────────
+    const monthlyData = useMemo(() => {
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        // Initialize all 12 months for the selected year
+        const monthMap: Record<number, { totalRR: number; trades: number }> = {};
+        for (let i = 0; i < 12; i++) monthMap[i] = { totalRR: 0, trades: 0 };
+
+        trades.forEach((t) => {
+            if (!t.date || t.date === "—") return;
+            const d = new Date(t.date);
+            if (isNaN(d.getTime())) return;
+            if (d.getFullYear() !== selectedYear) return;
+            const m = d.getMonth();
+            monthMap[m].trades++;
+            if (t.outcome === "Win") {
+                monthMap[m].totalRR += t.rrRatio || 0;
+            } else if (t.outcome === "Loss") {
+                monthMap[m].totalRR -= 1;
+            }
+        });
+
+        return Array.from({ length: 12 }, (_, i) => ({
+            month: monthNames[i],
+            totalRR: parseFloat(monthMap[i].totalRR.toFixed(2)),
+            trades: monthMap[i].trades,
+        }));
+    }, [trades, selectedYear]);
 
     // ─── Most Common Mistake ──────────────────────────────────────────
     const topMistake = useMemo(() => {
@@ -661,6 +703,134 @@ export default function DashboardPage() {
                     </div>
                 </div>
             </div>
+
+            {/* ─── Monthly RR & Trades Bar Chart ───────────────────────── */}
+            {availableYears.length > 0 && (
+                <div className="glass-card-chart rounded-2xl p-4 sm:p-6 border border-white/5 relative overflow-hidden animate-slide-up-fade stagger-6">
+                    <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent" />
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-sm font-semibold text-white tracking-wider uppercase font-mono flex items-center gap-2">
+                            <BarChart3 className="h-4 w-4 text-neon-cyan" />
+                            Monthly Overview
+                        </h2>
+                        <select
+                            value={selectedYear}
+                            onChange={(e) => setSelectedYear(Number(e.target.value))}
+                            className="bg-surface-800/80 border border-white/10 rounded-lg px-3 py-1.5 text-xs font-mono text-white backdrop-blur-md focus:outline-none focus:border-neon-cyan/50 cursor-pointer appearance-none hover:border-white/20 transition-colors"
+                            style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%23888\' stroke-width=\'2\'%3E%3Cpath d=\'M6 9l6 6 6-6\'/%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 8px center', paddingRight: '28px' }}
+                        >
+                            {availableYears.map((year) => (
+                                <option key={year} value={year} className="bg-surface-900 text-white">
+                                    {year}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%" debounce={50}>
+                            <BarChart data={monthlyData} margin={{ top: 20, right: 10, left: -10, bottom: 0 }} barCategoryGap="30%">
+                                <defs>
+                                    <linearGradient id="rrBarGrad" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#00ff88" stopOpacity={0.85} />
+                                        <stop offset="100%" stopColor="#00ff88" stopOpacity={0.25} />
+                                    </linearGradient>
+                                    <linearGradient id="rrBarGradNeg" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor="#ff3b5c" stopOpacity={0.25} />
+                                        <stop offset="100%" stopColor="#ff3b5c" stopOpacity={0.85} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
+                                <XAxis
+                                    dataKey="month"
+                                    tick={{ fontSize: 10, fill: "#666", fontFamily: "monospace" }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    dy={8}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 10, fill: "#555", fontFamily: "monospace" }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(val) => `${val}R`}
+                                />
+                                <Tooltip
+                                    content={({ active, payload, label }) => {
+                                        if (!active || !payload || !payload.length) return null;
+                                        const rr = Number(payload[0]?.value) || 0;
+                                        const entry = monthlyData.find(d => d.month === label);
+                                        return (
+                                            <div className="glass-card rounded-xl px-4 py-3 shadow-2xl border border-white/10 backdrop-blur-xl">
+                                                <p className="text-[10px] text-gray-400 font-mono mb-2 uppercase tracking-widest">{label}</p>
+                                                <div className="space-y-1">
+                                                    <p className="text-xs font-mono font-bold" style={{ color: rr >= 0 ? '#00ff88' : '#ff3b5c' }}>
+                                                        Net RR: {rr >= 0 ? '+' : ''}{rr.toFixed(2)}R
+                                                    </p>
+                                                    <p className="text-xs font-mono text-gray-300">
+                                                        Trades: {entry?.trades || 0}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    }}
+                                    cursor={{ fill: 'rgba(255,255,255,0.03)', radius: 4 }}
+                                />
+                                <Bar
+                                    dataKey="totalRR"
+                                    name="Net RR"
+                                    radius={[6, 6, 0, 0]}
+                                    animationDuration={1500}
+                                    animationEasing="ease-out"
+                                    label={({ x, y, width, index }: { x: number; y: number; width: number; index: number }) => {
+                                        const entry = monthlyData[index];
+                                        if (!entry || entry.trades === 0) return null;
+                                        const isPositive = entry.totalRR >= 0;
+                                        return (
+                                            <text
+                                                x={x + width / 2}
+                                                y={isPositive ? y - 6 : y + 14}
+                                                textAnchor="middle"
+                                                fontSize={9}
+                                                fontFamily="monospace"
+                                                fill="#888"
+                                            >
+                                                {entry.trades}t
+                                            </text>
+                                        );
+                                    }}
+                                >
+                                    {monthlyData.map((entry, index) => (
+                                        <Cell
+                                            key={`rr-cell-${index}`}
+                                            fill={entry.totalRR >= 0 ? 'url(#rrBarGrad)' : 'url(#rrBarGradNeg)'}
+                                        />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    {/* Summary stats row */}
+                    <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
+                        <div className="text-center">
+                            <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-1">Total RR</p>
+                            <p className={`text-sm font-bold font-mono ${monthlyData.reduce((s, d) => s + d.totalRR, 0) >= 0 ? 'text-neon-green' : 'text-neon-red'}`}>
+                                {monthlyData.reduce((s, d) => s + d.totalRR, 0) >= 0 ? '+' : ''}{monthlyData.reduce((s, d) => s + d.totalRR, 0).toFixed(2)}R
+                            </p>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-1">Best Month</p>
+                            <p className={`text-sm font-bold font-mono ${(() => { const best = [...monthlyData].sort((a, b) => b.totalRR - a.totalRR)[0]; return best && best.totalRR >= 0 ? 'text-neon-green' : 'text-neon-red'; })()}`}>
+                                {(() => { const best = [...monthlyData].sort((a, b) => b.totalRR - a.totalRR)[0]; return best && best.trades > 0 ? best.month : '—'; })()}
+                            </p>
+                        </div>
+                        <div className="text-center">
+                            <p className="text-[10px] text-gray-500 font-mono uppercase tracking-wider mb-1">Total Trades</p>
+                            <p className="text-sm font-bold font-mono text-white">
+                                {monthlyData.reduce((s, d) => s + d.trades, 0)}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ─── Rule Violation Detector (Glass Style) ──────────────── */}
             {(metrics.rulesFollowed > 0 || metrics.rulesBroken > 0) && (
