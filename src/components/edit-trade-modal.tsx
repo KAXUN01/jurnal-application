@@ -99,8 +99,24 @@ export default function EditTradeModal({ trade, isOpen, onClose, onSave }: EditT
         if (!form) return;
         setIsSaving(true);
         try {
+            // Auto-adjust P&L sign based on outcome:
+            // Win → positive, Loss → negative, BE → 0
+            let adjustedProfitLoss = form.profitLoss;
+            const rawPnl = parseFloat(form.profitLoss);
+            if (!isNaN(rawPnl) && rawPnl !== 0) {
+                if (form.outcome === "Loss") {
+                    adjustedProfitLoss = String(-Math.abs(rawPnl));
+                } else if (form.outcome === "Win") {
+                    adjustedProfitLoss = String(Math.abs(rawPnl));
+                }
+            }
+            if (form.outcome === "BE") {
+                adjustedProfitLoss = "0";
+            }
+
             await onSave({
                 ...form,
+                profitLoss: adjustedProfitLoss,
                 rrRatio: rrRatio ?? form.rrRatio,
                 screenshots: JSON.stringify(screenshots),
                 tags: JSON.stringify(tags),

@@ -87,10 +87,25 @@ export default function JournalPage() {
 
     const handleSubmit = async () => {
         try {
+            // Auto-adjust P&L sign based on outcome:
+            // Win → positive, Loss → negative, BE → 0
+            let adjustedProfitLoss = form.profitLoss;
+            const rawPnl = parseFloat(form.profitLoss);
+            if (!isNaN(rawPnl) && rawPnl !== 0) {
+                if (form.outcome === "Loss") {
+                    adjustedProfitLoss = String(-Math.abs(rawPnl));
+                } else if (form.outcome === "Win") {
+                    adjustedProfitLoss = String(Math.abs(rawPnl));
+                }
+            }
+            if (form.outcome === "BE") {
+                adjustedProfitLoss = "0";
+            }
+
             const res = await fetch("/api/trades", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ...form, rrRatio, screenshots: screenshotList }),
+                body: JSON.stringify({ ...form, profitLoss: adjustedProfitLoss, rrRatio, screenshots: screenshotList }),
             });
             if (!res.ok) throw new Error("Failed to save");
 
